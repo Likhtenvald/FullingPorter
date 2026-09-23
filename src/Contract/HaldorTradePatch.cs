@@ -6,28 +6,21 @@ namespace FullingPorter.Contract;
 [HarmonyPatch(typeof(Trader), nameof(Trader.GetAvailableItems))]
 internal static class HaldorTradePatch
 {
+    private static bool _logged;
+
     private static void Postfix(Trader __instance, ref System.Collections.Generic.List<Trader.TradeItem> __result)
     {
         if (__instance == null || __result == null) return;
-
-        // Haldor is the vanilla Black Forest trader.
-        // Use the trader prefab identity rather than localized display text.
         if (!__instance.name.StartsWith("Haldor") && !__instance.name.StartsWith("Trader")) return;
 
-        var prefab = ObjectDB.instance?.GetItemPrefab(ContractRegistry.ItemName);
-        var drop = prefab ? prefab.GetComponent<ItemDrop>() : null;
-        if (drop == null) return;
-
-        foreach (var trade in __result)
-            if (trade?.m_prefab == drop)
-                return;
-
-        __result.Add(new Trader.TradeItem
+        // Temporarily do not inject the custom trade. The current Valheim StoreGui
+        // expects additional TradeItem fields that our initial compatibility shim
+        // does not populate. Keeping the patch active but non-mutating lets us
+        // verify that Haldor itself is healthy before wiring the current API.
+        if (!_logged)
         {
-            m_prefab = drop,
-            m_stack = 1,
-            m_price = Plugin.ContractPrice.Value,
-            m_requiredGlobalKey = null
-        });
+            _logged = true;
+            Plugin.Log.LogWarning("Haldor integration is temporarily disabled while validating the current Trader.TradeItem API.");
+        }
     }
 }
