@@ -37,6 +37,9 @@ internal sealed class PorterWorker : MonoBehaviour
     private float _blockedStatusUntil;
     private float _blockedDialogueUntil;
 
+    private const string StatusKey = "FullingPorter.Status";
+    private const string DialogueContextKey = "FullingPorter.DialogueContext";
+
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
     private const float ScanInterval = 2f;
@@ -86,6 +89,8 @@ internal sealed class PorterWorker : MonoBehaviour
             case PorterWorkState.ToDestination: TickToDestination(); break;
             case PorterWorkState.ReturningHome: TickReturningHome(); break;
         }
+
+        PublishPresentation();
     }
 
     private void TickIdle()
@@ -475,6 +480,17 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal PorterDialogueContext GetDialogueContext()
     {
+        if (ZNet.instance != null && !ZNet.instance.IsServer())
+        {
+            var zdo = _view != null && _view.IsValid() ? _view.GetZDO() : null;
+            var value = zdo != null
+                ? zdo.GetInt(DialogueContextKey, (int)PorterDialogueContext.Idle)
+                : (int)PorterDialogueContext.Idle;
+            return value >= (int)PorterDialogueContext.Idle && value <= (int)PorterDialogueContext.Blocked
+                ? (PorterDialogueContext)value
+                : PorterDialogueContext.Idle;
+        }
+
         return PorterRules.GetDialogueContext(
             _state,
             _returningFromWork,
@@ -483,6 +499,12 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal string GetStatusText()
     {
+        if (ZNet.instance != null && !ZNet.instance.IsServer())
+        {
+            var zdo = _view != null && _view.IsValid() ? _view.GetZDO() : null;
+            return zdo?.GetString(StatusKey, PorterRules.IdleStatus) ?? PorterRules.IdleStatus;
+        }
+
         var token = PorterRules.GetStatusToken(
             _state,
             _returningFromWork,
@@ -496,6 +518,23 @@ internal sealed class PorterWorker : MonoBehaviour
             : Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
 
         return $"{token} ({_cargo.Count}/{capacity})";
+    }
+
+    private void PublishPresentation()
+    {
+        var zdo = _view.GetZDO();
+        if (zdo == null)
+            return;
+
+        // Clients do not run porter AI. Replicate the server's localized token
+        // and batch progress, and write only when the visible state changes.
+        var status = GetStatusText();
+        if (zdo.GetString(StatusKey, string.Empty) != status)
+            zdo.Set(StatusKey, status);
+
+        var context = (int)GetDialogueContext();
+        if (zdo.GetInt(DialogueContextKey, -1) != context)
+            zdo.Set(DialogueContextKey, context);
     }
 
     private bool IsDestinationCoolingDown(Container container, string itemId)
