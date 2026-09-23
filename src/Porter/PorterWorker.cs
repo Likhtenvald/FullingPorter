@@ -143,7 +143,7 @@ internal sealed class PorterWorker : MonoBehaviour
                 : null;
 
             if (entry.Item == null ||
-                !inventory.ContainsItem(entry.Item) ||
+                TransferService.FindMatchingSourceStack(inventory, entry.Item) == null ||
                 destinationInventory == null ||
                 !QuickStackPlusBridge.Accepts(entry.Destination, entry.Item) ||
                 !destinationInventory.CanAddItem(entry.Item, -1))
@@ -340,9 +340,14 @@ internal sealed class PorterWorker : MonoBehaviour
                     planningInventories);
                 if (target == null) continue;
 
+                // Keep the planned slot and item details across container ownership
+                // changes, which may replace every ItemData instance in the inventory.
+                var plannedItem = candidateItem.Clone();
+                plannedItem.m_gridPos = candidateItem.m_gridPos;
+                plannedItem.m_stack = candidateItem.m_stack;
                 _cargo.Add(new CargoEntry
                 {
-                    Item = candidateItem,
+                    Item = plannedItem,
                     Destination = target
                 });
 
