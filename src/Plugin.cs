@@ -28,7 +28,7 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Log = Logger;
-        ContractPrice = Config.Bind("Contract", "Price", 1500, "Haldor contract price in coins.");
+        ContractPrice = Config.Bind("Contract", "Price", 10, "Haldor contract price in coins.");
         WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 4, "Maximum distinct stacks carried per trip.");
         PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
