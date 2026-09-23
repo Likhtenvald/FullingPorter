@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FullingPorter.Porter;
@@ -15,11 +16,13 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
 
     private ZNetView _view;
     private Character _character;
+    private PorterWorker _worker;
 
     private void Awake()
     {
         _view = GetComponent<ZNetView>();
         _character = GetComponent<Character>();
+        _worker = GetComponent<PorterWorker>();
         ApplyDisplayName();
     }
 
@@ -55,8 +58,22 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         if (_serverActive != null)
             return true;
 
-        if (ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(WorldPresenceKey))
-            return true;
+        // Reconcile the convenience global key against the persistent ZDO set.
+        // This also sees porters in unloaded zones, unlike FindObjectsOfType.
+        if (ZDOMan.instance != null)
+        {
+            var zdos = new List<ZDO>();
+            ZDOMan.instance.GetAllZDOsWithPrefab(PorterPrefabRegistry.PrefabName, zdos);
+
+            if (zdos.Count > 0)
+            {
+                MarkWorldOccupied();
+                return true;
+            }
+
+            ClearWorldOccupied();
+            return false;
+        }
 
         foreach (var porter in Object.FindObjectsOfType<PorterState>())
         {
@@ -64,7 +81,7 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
                 return true;
         }
 
-        return false;
+        return ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(WorldPresenceKey);
     }
 
     internal static void MarkWorldOccupied()
@@ -125,5 +142,9 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
 
     public string GetHoverName() => PorterName;
     public float GetHoverOffset() => 1.5f;
-    public string GetHoverText() => $"{PorterName}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
+    public string GetHoverText()
+    {
+        var status = _worker != null ? _worker.GetStatusText() : "$fullingporter_status_idle";
+        return $"{PorterName}\n{status}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
+    }
 }
