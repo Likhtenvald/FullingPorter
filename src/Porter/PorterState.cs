@@ -27,6 +27,6 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     }
 
     public string GetHoverName() => PorterName;
-    public Vector3 GetHoverOffset() => Vector3.up * 1.5f;
+    public float GetHoverOffset() => 1.5f;
     public string GetHoverText() => $"{PorterName}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
 }
