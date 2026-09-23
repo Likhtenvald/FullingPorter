@@ -12,6 +12,9 @@ internal static class TransferService
     {
         Success,
         WaitingForOwnership,
+        SourceUnavailable,
+        DestinationRejected,
+        DestinationFull,
         Failed
     }
 
@@ -33,9 +36,9 @@ internal static class TransferService
         var sourceInventory = source.GetInventory();
         var destinationInventory = destination.GetInventory();
         if (sourceInventory == null || destinationInventory == null) return TransferResult.Failed;
-        if (!sourceInventory.ContainsItem(item)) return TransferResult.Failed;
-        if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.Failed;
-        if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.Failed;
+        if (!sourceInventory.ContainsItem(item)) return TransferResult.SourceUnavailable;
+        if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.DestinationRejected;
+        if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.DestinationFull;
 
         // Inventory.AddItem(ItemData) clones/moves the stack into the destination.
         // Remove only after AddItem reports success.
