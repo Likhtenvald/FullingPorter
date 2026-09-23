@@ -20,6 +20,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private WorkState _state;
     private Container _source;
     private readonly List<CargoEntry> _cargo = new();
+    private readonly Dictionary<Container, Dictionary<string, float>> _destinationCooldowns = new();
     private Vector3 _home;
     private float _nextScan;
     private Vector3 _moveTarget;
@@ -35,6 +36,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private const float StuckTimeout = 8f;
     private const float ProgressDistance = 0.25f;
     private const float TransferInterval = 0.12f;
+    private const float DestinationRetryCooldown = 8f;
 
     private void Awake()
     {
@@ -177,7 +179,14 @@ internal sealed class PorterWorker : MonoBehaviour
         _nextTransferTime = Time.time + TransferInterval;
 
         if (TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item))
+        {
+            ClearDestinationCooldown(entry.Destination, entry.Item);
             Plugin.Log.LogDebug($"Porter moved {entry.Item.m_shared.m_name}.");
+        }
+        else
+        {
+            SetDestinationCooldown(entry.Destination, entry.Item);
+        }
 
         // Whether the transfer succeeded or failed, do not get stuck on this
         // destination. A failed stack will be reconsidered during the next scan.
@@ -268,9 +277,15 @@ internal sealed class PorterWorker : MonoBehaviour
             }
 
             if (!accepted.Contains(itemId)) continue;
+            if (IsDestinationCoolingDown(container, itemId)) continue;
 
             var inventory = container.GetInventory();
-            if (inventory == null || !inventory.CanAddItem(item, -1)) continue;
+            if (inventory == null) continue;
+            if (!inventory.CanAddItem(item, -1))
+            {
+                SetDestinationCooldown(container, item);
+                continue;
+            }
 
             var distanceSqr = (source.transform.position - container.transform.position).sqrMagnitude;
             if (distanceSqr < bestDistance)
@@ -281,6 +296,61 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         return best;
+    }
+
+    internal string GetStatusText()
+    {
+        switch (_state)
+        {
+            case WorkState.ToSource:
+                return $"$fullingporter_status_collecting ({_cargo.Count}/{Mathf.Max(1, Plugin.MaxStacksPerTrip.Value)})";
+            case WorkState.ToDestination:
+                return $"$fullingporter_status_delivering ({_cargo.Count}/{Mathf.Max(1, Plugin.MaxStacksPerTrip.Value)})";
+            case WorkState.ReturningHome:
+                return "$fullingporter_status_returning";
+            default:
+                return "$fullingporter_status_idle";
+        }
+    }
+
+    private bool IsDestinationCoolingDown(Container container, string itemId)
+    {
+        if (container == null || string.IsNullOrEmpty(itemId)) return false;
+        if (!_destinationCooldowns.TryGetValue(container, out var items)) return false;
+        if (!items.TryGetValue(itemId, out var until)) return false;
+
+        if (Time.time < until)
+            return true;
+
+        items.Remove(itemId);
+        if (items.Count == 0)
+            _destinationCooldowns.Remove(container);
+        return false;
+    }
+
+    private void SetDestinationCooldown(Container container, ItemDrop.ItemData item)
+    {
+        var itemId = item?.m_dropPrefab?.name;
+        if (container == null || string.IsNullOrEmpty(itemId)) return;
+
+        if (!_destinationCooldowns.TryGetValue(container, out var items))
+        {
+            items = new Dictionary<string, float>();
+            _destinationCooldowns[container] = items;
+        }
+
+        items[itemId] = Time.time + DestinationRetryCooldown;
+    }
+
+    private void ClearDestinationCooldown(Container container, ItemDrop.ItemData item)
+    {
+        var itemId = item?.m_dropPrefab?.name;
+        if (container == null || string.IsNullOrEmpty(itemId)) return;
+        if (!_destinationCooldowns.TryGetValue(container, out var items)) return;
+
+        items.Remove(itemId);
+        if (items.Count == 0)
+            _destinationCooldowns.Remove(container);
     }
 
     private int FindNearestCargoIndex()
