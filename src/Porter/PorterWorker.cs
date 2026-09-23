@@ -123,12 +123,17 @@ internal sealed class PorterWorker : MonoBehaviour
         for (var i = _cargo.Count - 1; i >= 0; --i)
         {
             var entry = _cargo[i];
+            var destinationInventory = IsUsable(entry.Destination)
+                ? entry.Destination.GetInventory()
+                : null;
+
             if (entry.Item == null ||
                 !inventory.ContainsItem(entry.Item) ||
-                !IsUsable(entry.Destination) ||
+                destinationInventory == null ||
                 !QuickStackPlusBridge.Accepts(entry.Destination, entry.Item) ||
-                !entry.Destination.GetInventory().CanAddItem(entry.Item, -1))
+                !destinationInventory.CanAddItem(entry.Item, -1))
             {
+                Plugin.Log.LogDebug($"Porter skipped unavailable cargo during source revalidation: {DescribeItem(entry.Item)}.");
                 _cargo.RemoveAt(i);
             }
         }
@@ -165,9 +170,7 @@ internal sealed class PorterWorker : MonoBehaviour
         var entry = _cargo[index];
         if (!IsUsable(entry.Destination) || entry.Item == null)
         {
-            _cargo.RemoveAt(index);
-            if (!HasCargoForDestination(_activeDestination))
-                _activeDestination = null;
+            RemoveCargoEntryAndContinue(index);
             return;
         }
 
@@ -176,10 +179,7 @@ internal sealed class PorterWorker : MonoBehaviour
             if (stuckAtDestination)
             {
                 Plugin.Log.LogDebug("Porter could not reach a destination; skipping this stack.");
-                _cargo.RemoveAt(index);
-                if (!HasCargoForDestination(_activeDestination))
-                    _activeDestination = null;
-                if (_cargo.Count == 0) FinishBatch();
+                RemoveCargoEntryAndContinue(index);
             }
             return;
         }
@@ -209,10 +209,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
             Plugin.Log.LogWarning($"Porter ownership wait timed out for {DescribeItem(entry.Item)}; skipping this stack.");
             ResetOwnershipWait();
-            _cargo.RemoveAt(index);
-            if (!HasCargoForDestination(_activeDestination))
-                _activeDestination = null;
-            if (_cargo.Count == 0) FinishBatch();
+            RemoveCargoEntryAndContinue(index);
             return;
         }
 
@@ -241,12 +238,7 @@ internal sealed class PorterWorker : MonoBehaviour
             Plugin.Log.LogDebug($"Porter transfer failed for {DescribeItem(entry.Item)} without destination cooldown.");
         }
 
-        _cargo.RemoveAt(index);
-        if (!HasCargoForDestination(_activeDestination))
-            _activeDestination = null;
-
-        if (_cargo.Count == 0)
-            FinishBatch();
+        RemoveCargoEntryAndContinue(index);
     }
 
     private void TickReturningHome()
@@ -420,6 +412,22 @@ internal sealed class PorterWorker : MonoBehaviour
         items.Remove(itemId);
         if (items.Count == 0)
             _destinationCooldowns.Remove(container);
+    }
+
+    private void RemoveCargoEntryAndContinue(int index)
+    {
+        if (index >= 0 && index < _cargo.Count)
+            _cargo.RemoveAt(index);
+
+        // Never let one failed stack pin the rest of the trip to the same
+        // destination. Re-evaluate the nearest destination from the remaining
+        // cargo on the next tick. If another item can still fit in the same
+        // container, that container may be selected again.
+        _activeDestination = null;
+        ResetOwnershipWait();
+
+        if (_cargo.Count == 0)
+            FinishBatch();
     }
 
     private Container FindNearestDestination()
