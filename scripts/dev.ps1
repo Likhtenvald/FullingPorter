@@ -57,7 +57,18 @@ Write-Host "Thunderstore: $ThunderstoreProfile"
 Write-Host ""
 
 if ($InspectJotunn) {
-    $jotunnDll = Get-ChildItem (Join-Path $ThunderstoreProfile "BepInEx\plugins") -Recurse -Filter "Jotunn.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    $managedDir = Join-Path $ValheimDir "valheim_Data\Managed"
+    $pluginsDir = Join-Path $ThunderstoreProfile "BepInEx\plugins"
+    $resolveHandler = [System.ResolveEventHandler]{
+        param($sender, $args)
+        $name = ([System.Reflection.AssemblyName]$args.Name).Name + ".dll"
+        $candidate = Get-ChildItem @($managedDir, $pluginsDir) -Recurse -Filter $name -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+        if ($candidate) { return [System.Reflection.Assembly]::LoadFrom($candidate) }
+        return $null
+    }
+    [AppDomain]::CurrentDomain.add_AssemblyResolve($resolveHandler)
+    $jotunnDll = Get-ChildItem $pluginsDir -Recurse -Filter "Jotunn.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
     if (!$jotunnDll) { throw "Jotunn.dll not found in Thunderstore profile." }
     $asm = [Reflection.Assembly]::LoadFrom($jotunnDll)
     $type = $asm.GetType("Jotunn.Managers.LocalizationManager")
@@ -78,7 +89,16 @@ if ($InspectJotunn) {
     Write-Host "LocalizationManager Add* methods:"
     $type.GetMethods([Reflection.BindingFlags]"Public,NonPublic,Instance,Static") |
         Where-Object { $_.Name -like "Add*" } |
-        ForEach-Object { Write-Host "  $($_.ToString())" }
+        ForEach-Object {
+            try {
+                $parameters = ($_.GetParameters() | ForEach-Object { $_.ParameterType.FullName + " " + $_.Name }) -join ", "
+                Write-Host "  $($_.ReturnType.FullName) $($_.Name)($parameters)"
+            }
+            catch {
+                Write-Host "  $($_.Name) [signature unavailable: $($_.Exception.Message)]"
+            }
+        }
+    [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolveHandler)
     exit 0
 }
 
