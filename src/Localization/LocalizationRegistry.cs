@@ -34,6 +34,22 @@ internal static class LocalizationRegistry
         LocalizationManager.Instance.AddLocalization("English", English);
         LocalizationManager.Instance.AddLocalization("Russian", Russian);
         LocalizationManager.Instance.AddLocalization("russian", Russian);
-        Plugin.Log.LogInfo("FullingPorter localization registered through Jotunn AddLocalization(language, dictionary).");
+        try
+        {
+            var method = typeof(LocalizationManager).GetMethod(
+                "GetPlayerLanguage",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Static |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
+
+            object target = method != null && method.IsStatic ? null : LocalizationManager.Instance;
+            var playerLanguage = method?.Invoke(target, null);
+            Plugin.Log.LogInfo($"FullingPorter localization registered. Jotunn player language: '{playerLanguage ?? "<null>"}'.");
+        }
+        catch (System.Exception ex)
+        {
+            Plugin.Log.LogWarning($"Could not inspect Jotunn player language: {ex.GetType().Name}: {ex.Message}");
+        }
     }
 }
