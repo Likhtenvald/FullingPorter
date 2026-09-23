@@ -1,3 +1,4 @@
+using FullingPorter.Core;
 using HarmonyLib;
 
 namespace FullingPorter.Patches;
@@ -43,7 +44,7 @@ internal static class PorterRoutedRpcGuardPatch
                 return false;
             }
 
-            if (claimedSender != peer.m_uid)
+            if (!PorterServerRequestRules.IsAuthenticatedSender(claimedSender, peer.m_uid))
             {
                 Plugin.Log.LogWarning(
                     $"Dropped forged FullingPorter RPC: claimed peer {claimedSender}, actual peer {peer.m_uid}.");
