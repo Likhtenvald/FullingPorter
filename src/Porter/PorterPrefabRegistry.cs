@@ -46,6 +46,8 @@ internal static class PorterPrefabRegistry
         var custom = new CustomPrefab(prefab, true);
         prefab.AddComponent<PorterState>();
         prefab.AddComponent<PorterWorker>();
+        if (prefab.GetComponent<Talker>() == null)
+            prefab.AddComponent<Talker>();
         prefab.AddComponent<PorterPersonality>();
         prefab.AddComponent<PorterInteraction>();
 
