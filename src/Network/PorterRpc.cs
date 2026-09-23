@@ -4,6 +4,7 @@ using FullingPorter.Porter;
 using FullingPorter.Storage;
 using Jotunn.Entities;
 using Jotunn.Managers;
+using HarmonyLib;
 using UnityEngine;
 
 namespace FullingPorter.Network;
@@ -20,6 +21,8 @@ internal static class PorterRpc
 
     private static CustomRPC _rpc;
     private static bool _spawnPending;
+    private static readonly System.Reflection.MethodInfo GetServerPeerIdMethod =
+        AccessTools.Method(typeof(ZRoutedRpc), "GetServerPeerID");
 
     internal static void Register()
     {
@@ -31,12 +34,19 @@ internal static class PorterRpc
         if (_rpc == null || ZRoutedRpc.instance == null || _spawnPending)
             return;
 
+        var serverPeerId = GetServerPeerId();
+        if (serverPeerId == 0L)
+        {
+            Plugin.Log.LogWarning("Porter spawn request skipped because the server peer ID could not be resolved.");
+            return;
+        }
+
         _spawnPending = true;
         var pkg = new ZPackage();
         pkg.Write((int)ActionCode.Spawn);
         pkg.Write(position);
         pkg.Write(forward);
-        _rpc.SendPackage(ZRoutedRpc.instance.GetServerPeerID(), pkg);
+        _rpc.SendPackage(serverPeerId, pkg);
     }
 
     internal static void RequestToggleSource(Container container)
@@ -46,10 +56,13 @@ internal static class PorterRpc
         if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
             return;
 
+        var serverPeerId = GetServerPeerId();
+        if (serverPeerId == 0L) return;
+
         var pkg = new ZPackage();
         pkg.Write((int)ActionCode.ToggleSource);
         pkg.Write(zdo.m_uid);
-        _rpc.SendPackage(ZRoutedRpc.instance.GetServerPeerID(), pkg);
+        _rpc.SendPackage(serverPeerId, pkg);
     }
 
     internal static void RequestDismiss(ZNetView view)
@@ -58,10 +71,13 @@ internal static class PorterRpc
         if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
             return;
 
+        var serverPeerId = GetServerPeerId();
+        if (serverPeerId == 0L) return;
+
         var pkg = new ZPackage();
         pkg.Write((int)ActionCode.Dismiss);
         pkg.Write(zdo.m_uid);
-        _rpc.SendPackage(ZRoutedRpc.instance.GetServerPeerID(), pkg);
+        _rpc.SendPackage(serverPeerId, pkg);
     }
 
     internal static void RequestRename(ZNetView view, string name)
@@ -70,11 +86,41 @@ internal static class PorterRpc
         if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
             return;
 
+        var serverPeerId = GetServerPeerId();
+        if (serverPeerId == 0L) return;
+
         var pkg = new ZPackage();
         pkg.Write((int)ActionCode.Rename);
         pkg.Write(zdo.m_uid);
         pkg.Write(name ?? string.Empty);
-        _rpc.SendPackage(ZRoutedRpc.instance.GetServerPeerID(), pkg);
+        _rpc.SendPackage(serverPeerId, pkg);
+    }
+
+    private static long GetServerPeerId()
+    {
+        var routed = ZRoutedRpc.instance;
+        if (routed == null)
+            return 0L;
+
+        if (ZNet.instance != null && ZNet.instance.IsServer())
+            return routed.m_id;
+
+        if (GetServerPeerIdMethod == null)
+        {
+            Plugin.Log.LogWarning("ZRoutedRpc.GetServerPeerID is unavailable on this Valheim build.");
+            return 0L;
+        }
+
+        try
+        {
+            var value = GetServerPeerIdMethod.Invoke(routed, null);
+            return value is long peerId ? peerId : 0L;
+        }
+        catch (System.Exception ex)
+        {
+            Plugin.Log.LogWarning("Could not resolve Valheim server peer ID: " + ex.GetBaseException().Message);
+            return 0L;
+        }
     }
 
     private static IEnumerator ServerReceive(long sender, ZPackage pkg)
