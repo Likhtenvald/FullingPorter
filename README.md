@@ -87,4 +87,4 @@ See:
 - [docs/PLAYTEST.md](docs/PLAYTEST.md) for the current test matrix.
 - [docs/BUILD.md](docs/BUILD.md) for local build details.
 
-Host and remote-client smoke tests passed on two PCs on 2026-09-23, covering cargo transfers, server config and activity status. Dedicated-server, mismatched-version and long-term save migration tests remain open. Use a disposable test world until those gates pass.
+Host and remote-client tests on two PCs passed on 2026-09-23, including cargo transfers, server config, activity status and the 0.1.1 version-compatibility gate. Dedicated-server and long-term save migration tests remain open. Use a disposable test world until those gates pass.

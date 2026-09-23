@@ -2,7 +2,7 @@
 
 Use a disposable world for development tests.
 
-Host and remote-client smoke tests on two PCs were reported passing on 2026-09-23 after the transfer, config and activity-status fixes. The checklist below remains the regression gate for future builds; dedicated-server and version-mismatch cases have not yet been confirmed.
+Host and remote-client tests on two PCs were reported passing on 2026-09-23 after the transfer, config and activity-status fixes, including the FullingPorter 0.1.1 version gate. The checklist below remains the regression gate for future builds; dedicated-server compatibility has not yet been confirmed.
 
 ## Build gate
 
