@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using Jotunn;
 using Jotunn.Managers;
+using Jotunn.Utils;
 using FullingPorter.Localization;
 using FullingPorter.Network;
 using UnityEngine;
@@ -32,9 +33,34 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Log = Logger;
-        ContractPrice = Config.Bind("Contract", "Price", 1500, "Haldor contract price in coins.");
-        WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
-        MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 10, "Maximum distinct stacks carried per trip.");
+        var serverOnly = new ConfigurationManagerAttributes { IsAdminOnly = true };
+
+        ContractPrice = Config.Bind(
+            "Contract",
+            "Price",
+            1500,
+            new ConfigDescription(
+                "Haldor contract price in coins. Synchronized from the server.",
+                null,
+                serverOnly));
+
+        WorkRadius = Config.Bind(
+            "Porter",
+            "WorkRadius",
+            30f,
+            new ConfigDescription(
+                "Maximum work radius in metres. Synchronized from the server.",
+                null,
+                new ConfigurationManagerAttributes { IsAdminOnly = true }));
+
+        MaxStacksPerTrip = Config.Bind(
+            "Porter",
+            "MaxStacksPerTrip",
+            10,
+            new ConfigDescription(
+                "Maximum distinct stacks carried per trip. Synchronized from the server.",
+                null,
+                new ConfigurationManagerAttributes { IsAdminOnly = true }));
         DismissKey = Config.Bind("Porter", "DismissKey", KeyCode.Delete, "Key used while looking at a porter to dismiss it. Press twice to confirm.");
         RenameKey = Config.Bind("Porter", "RenameKey", KeyCode.End, "Key used while looking at a porter to rename it.");
         SourceChestKey = Config.Bind("Porter", "SourceChestKey", KeyCode.Home, "Key used while looking at a container to toggle it as a porter source.");
