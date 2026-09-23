@@ -143,3 +143,20 @@ Run these checks with one host/server and one remote client.
 7. After rejected requests, verify source markers, porter name, world-presence state, and inventories remain unchanged.
 
 Expected result: every remote action is attributed to the real inbound peer, proximity is enforced server-side, and rejected RPCs have no world-state side effects.
+
+
+## Multiplayer regression: open chest during porter transfer
+
+This is a release-blocking anti-duplication test.
+
+1. Host a world on one PC and connect a second PC as a remote client.
+2. Put several identifiable stacks into a marked source chest and configure a Smart Storage destination with enough free space.
+3. While the porter is walking toward the destination, open the source chest on the remote client and keep it open through the expected delivery moment.
+4. Verify the porter waits and does not mutate either inventory while the source chest is open.
+5. Close the source chest and verify the porter resumes, delivering each stack exactly once.
+6. Repeat while holding the destination chest open instead of the source chest.
+7. Repeatedly try to open either chest during the short transfer moment and verify the porter transfer lock blocks opening until the transaction finishes.
+8. After every variant, count source + destination totals and verify no item was duplicated or lost.
+9. Repeat with several different item types routed into the same Smart Storage chest.
+
+Expected result: an open source or destination chest pauses the porter. A chest cannot be newly opened during the porter's transfer lock. Total item count remains constant.
