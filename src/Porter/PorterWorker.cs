@@ -14,6 +14,7 @@ internal sealed class PorterWorker : MonoBehaviour
     {
         internal ItemDrop.ItemData Item;
         internal Container Destination;
+        internal int TransferFailures;
     }
 
     private Character _character;
@@ -48,6 +49,8 @@ internal sealed class PorterWorker : MonoBehaviour
     private const float DestinationRetryCooldown = 8f;
     private const float BlockedDialogueDuration = 20f;
     private const float OwnershipWaitTimeout = 3f;
+    private const int MaxTransferFailures = 3;
+    private const float TransferFailureRetryDelay = 0.3f;
 
     private void Awake()
     {
@@ -244,7 +247,18 @@ internal sealed class PorterWorker : MonoBehaviour
         }
         else
         {
-            Plugin.Log.LogDebug($"Porter transfer failed for {DescribeItem(entry.Item)} without destination cooldown.");
+            entry.TransferFailures++;
+            if (entry.TransferFailures < MaxTransferFailures)
+            {
+                _nextTransferTime = Time.time + TransferFailureRetryDelay;
+                Plugin.Log.LogDebug(
+                    $"Porter transfer failed transiently for {DescribeItem(entry.Item)}; retry " +
+                    $"{entry.TransferFailures}/{MaxTransferFailures - 1} at the same destination.");
+                return;
+            }
+
+            Plugin.Log.LogWarning(
+                $"Porter transfer failed {MaxTransferFailures} times for {DescribeItem(entry.Item)}; skipping this stack.");
         }
 
         RemoveCargoEntryAndContinue(index);
