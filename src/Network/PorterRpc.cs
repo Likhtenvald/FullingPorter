@@ -21,6 +21,8 @@ internal static class PorterRpc
 
     private static CustomRPC _rpc;
     private static bool _spawnPending;
+    private static Inventory _pendingContractInventory;
+    private static ItemDrop.ItemData _pendingContractItem;
     private static readonly System.Reflection.MethodInfo GetServerPeerIdMethod =
         AccessTools.Method(typeof(ZRoutedRpc), "GetServerPeerID");
     private static readonly System.Reflection.FieldInfo RoutedRpcIdField =
@@ -31,15 +33,36 @@ internal static class PorterRpc
         _rpc = NetworkManager.Instance.AddRPC("PorterActions", ServerReceive, ClientReceive);
     }
 
-    internal static void RequestSpawn(Vector3 position, Vector3 forward)
+    internal static void RequestSpawn(
+        Vector3 position,
+        Vector3 forward,
+        Inventory inventory,
+        ItemDrop.ItemData contractItem)
     {
-        if (_rpc == null || ZRoutedRpc.instance == null || _spawnPending)
+        if (_spawnPending || inventory == null || contractItem == null)
             return;
+
+        _pendingContractInventory = inventory;
+        _pendingContractItem = contractItem;
+
+        if (ZNet.instance != null && ZNet.instance.IsServer())
+        {
+            var success = TrySpawnServer(position, forward);
+            CompleteLocalSpawn(success);
+            return;
+        }
+
+        if (_rpc == null || ZRoutedRpc.instance == null)
+        {
+            ClearPendingSpawn();
+            return;
+        }
 
         var serverPeerId = GetServerPeerId();
         if (serverPeerId == 0L)
         {
             Plugin.Log.LogWarning("Porter spawn request skipped because the server peer ID could not be resolved.");
+            ClearPendingSpawn();
             return;
         }
 
@@ -161,16 +184,7 @@ internal static class PorterRpc
         switch (action)
         {
             case ActionCode.Spawn:
-                _spawnPending = false;
-                if (success)
-                {
-                    ConsumeLocalContract();
-                    Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "$fullingporter_spawned");
-                }
-                else
-                {
-                    Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "$fullingporter_already_exists");
-                }
+                CompleteLocalSpawn(success);
                 break;
 
             case ActionCode.ToggleSource:
@@ -195,19 +209,22 @@ internal static class PorterRpc
     {
         var position = pkg.ReadVector3();
         var forward = pkg.ReadVector3();
+        SendResult(sender, ActionCode.Spawn, TrySpawnServer(position, forward));
+    }
+
+    private static bool TrySpawnServer(Vector3 position, Vector3 forward)
+    {
+        if (ZNet.instance == null || !ZNet.instance.IsServer())
+            return false;
 
         if (PorterState.WorldHasPorter())
-        {
-            SendResult(sender, ActionCode.Spawn, false);
-            return;
-        }
+            return false;
 
         var prefab = ZNetScene.instance?.GetPrefab(PorterPrefabRegistry.PrefabName);
         if (prefab == null)
         {
             Plugin.Log.LogError("Porter prefab is not registered in ZNetScene.");
-            SendResult(sender, ActionCode.Spawn, false);
-            return;
+            return false;
         }
 
         forward.y = 0f;
@@ -218,13 +235,10 @@ internal static class PorterRpc
             Quaternion.LookRotation(-forward.normalized));
         var view = spawned != null ? spawned.GetComponent<ZNetView>() : null;
         if (spawned == null || view == null)
-        {
-            SendResult(sender, ActionCode.Spawn, false);
-            return;
-        }
+            return false;
 
         PorterState.MarkWorldOccupied(view);
-        SendResult(sender, ActionCode.Spawn, true);
+        return true;
     }
 
     private static void HandleToggleSource(long sender, ZPackage pkg)
@@ -303,10 +317,36 @@ internal static class PorterRpc
         return pkg;
     }
 
-    private static void ConsumeLocalContract()
+    private static void CompleteLocalSpawn(bool success)
     {
-        var inventory = Player.m_localPlayer?.GetInventory();
-        var items = inventory?.GetAllItems();
+        _spawnPending = false;
+
+        if (success)
+        {
+            ConsumePendingContract();
+            Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "$fullingporter_spawned");
+        }
+        else
+        {
+            Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "$fullingporter_already_exists");
+        }
+
+        ClearPendingSpawn();
+    }
+
+    private static void ConsumePendingContract()
+    {
+        var inventory = _pendingContractInventory ?? Player.m_localPlayer?.GetInventory();
+        if (inventory == null)
+            return;
+
+        if (_pendingContractItem != null && inventory.ContainsItem(_pendingContractItem))
+        {
+            inventory.RemoveOneItem(_pendingContractItem);
+            return;
+        }
+
+        var items = inventory.GetAllItems();
         if (items == null)
             return;
 
@@ -318,5 +358,12 @@ internal static class PorterRpc
             inventory.RemoveOneItem(item);
             return;
         }
+    }
+
+    private static void ClearPendingSpawn()
+    {
+        _spawnPending = false;
+        _pendingContractInventory = null;
+        _pendingContractItem = null;
     }
 }
