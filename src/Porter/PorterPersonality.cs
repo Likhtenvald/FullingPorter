@@ -1,3 +1,4 @@
+using FullingPorter.Core;
 using Jotunn.Managers;
 using UnityEngine;
 
@@ -144,18 +145,18 @@ internal sealed class PorterPersonality : MonoBehaviour
     {
         var context = _worker != null
             ? _worker.GetDialogueContext()
-            : PorterWorker.DialogueContext.Idle;
+            : PorterDialogueContext.Idle;
 
         string[] lines;
         switch (context)
         {
-            case PorterWorker.DialogueContext.Working:
+            case PorterDialogueContext.Working:
                 lines = WorkingLines;
                 break;
-            case PorterWorker.DialogueContext.Returning:
+            case PorterDialogueContext.Returning:
                 lines = ReturningLines;
                 break;
-            case PorterWorker.DialogueContext.Blocked:
+            case PorterDialogueContext.Blocked:
                 lines = BlockedLines;
                 break;
             default:
