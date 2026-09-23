@@ -48,13 +48,19 @@ public sealed class Plugin : BaseUnityPlugin
             "Porter",
             "WorkRadius",
             30f,
-            "Maximum work radius in metres.");
+            new ConfigDescription(
+                "Maximum work radius in metres. Synchronized from the server.",
+                null,
+                new ConfigurationManagerAttributes { IsAdminOnly = true }));
 
         MaxStacksPerTrip = Config.Bind(
             "Porter",
             "MaxStacksPerTrip",
             10,
-            "Maximum distinct stacks carried per trip.");
+            new ConfigDescription(
+                "Maximum distinct stacks carried per trip. Synchronized from the server.",
+                null,
+                new ConfigurationManagerAttributes { IsAdminOnly = true }));
         DismissKey = Config.Bind("Porter", "DismissKey", KeyCode.Delete, "Key used while looking at a porter to dismiss it. Press twice to confirm.");
         RenameKey = Config.Bind("Porter", "RenameKey", KeyCode.End, "Key used while looking at a porter to rename it.");
         SourceChestKey = Config.Bind("Porter", "SourceChestKey", KeyCode.Home, "Key used while looking at a container to toggle it as a porter source.");
