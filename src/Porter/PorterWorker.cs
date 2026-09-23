@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FullingPorter.Core;
 using FullingPorter.Storage;
 using UnityEngine;
 
@@ -6,10 +7,6 @@ namespace FullingPorter.Porter;
 
 internal sealed class PorterWorker : MonoBehaviour
 {
-    internal enum DialogueContext { Idle, Working, Returning, Blocked }
-
-    private enum WorkState { Idle, ToSource, ToDestination, ReturningHome }
-
     private sealed class CargoEntry
     {
         internal ItemDrop.ItemData Item;
@@ -20,7 +17,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private Character _character;
     private PorterMovementAI _ai;
     private ZNetView _view;
-    private WorkState _state;
+    private PorterWorkState _state;
     private Container _source;
     private readonly List<CargoEntry> _cargo = new();
     private readonly Dictionary<Container, Dictionary<string, float>> _destinationCooldowns = new();
@@ -84,10 +81,10 @@ internal sealed class PorterWorker : MonoBehaviour
 
         switch (_state)
         {
-            case WorkState.Idle: TickIdle(); break;
-            case WorkState.ToSource: TickToSource(); break;
-            case WorkState.ToDestination: TickToDestination(); break;
-            case WorkState.ReturningHome: TickReturningHome(); break;
+            case PorterWorkState.Idle: TickIdle(); break;
+            case PorterWorkState.ToSource: TickToSource(); break;
+            case PorterWorkState.ToDestination: TickToDestination(); break;
+            case PorterWorkState.ReturningHome: TickReturningHome(); break;
         }
     }
 
@@ -98,14 +95,14 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (TryFindBatch())
         {
-            _state = WorkState.ToSource;
+            _state = PorterWorkState.ToSource;
             return;
         }
 
         if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
         {
             _returningFromWork = false;
-            _state = WorkState.ReturningHome;
+            _state = PorterWorkState.ReturningHome;
         }
     }
 
@@ -158,7 +155,7 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         Plugin.Log.LogDebug($"Porter collected {_cargo.Count} stack(s) from source and is heading to destination.");
-        _state = WorkState.ToDestination;
+        _state = PorterWorkState.ToDestination;
     }
 
     private void TickToDestination()
@@ -248,7 +245,7 @@ internal sealed class PorterWorker : MonoBehaviour
         else
         {
             entry.TransferFailures++;
-            if (entry.TransferFailures < MaxTransferFailures)
+            if (PorterRules.ShouldRetryTransfer(entry.TransferFailures, MaxTransferFailures))
             {
                 _nextTransferTime = Time.time + TransferFailureRetryDelay;
                 Plugin.Log.LogDebug(
@@ -270,7 +267,7 @@ internal sealed class PorterWorker : MonoBehaviour
         {
             _ai?.Halt();
             ResetMoveTracking();
-            _state = WorkState.Idle;
+            _state = PorterWorkState.Idle;
             _returningFromWork = false;
             _nextScan = 0f;
         }
@@ -446,47 +443,29 @@ internal sealed class PorterWorker : MonoBehaviour
         return planning;
     }
 
-    internal DialogueContext GetDialogueContext()
+    internal PorterDialogueContext GetDialogueContext()
     {
-        if (Time.time < _blockedDialogueUntil)
-            return DialogueContext.Blocked;
-
-        switch (_state)
-        {
-            case WorkState.ToSource:
-            case WorkState.ToDestination:
-                return DialogueContext.Working;
-            case WorkState.ReturningHome:
-                return _returningFromWork
-                    ? DialogueContext.Returning
-                    : DialogueContext.Idle;
-            default:
-                return DialogueContext.Idle;
-        }
+        return PorterRules.GetDialogueContext(
+            _state,
+            _returningFromWork,
+            Time.time < _blockedDialogueUntil);
     }
 
     internal string GetStatusText()
     {
-        if (Time.time < _blockedStatusUntil)
-            return "$fullingporter_status_blocked";
+        var token = PorterRules.GetStatusToken(
+            _state,
+            _returningFromWork,
+            Time.time < _blockedStatusUntil);
+
+        if (token != PorterRules.CollectingStatus && token != PorterRules.DeliveringStatus)
+            return token;
 
         var capacity = _activeTripCapacity > 0
             ? _activeTripCapacity
             : Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
 
-        switch (_state)
-        {
-            case WorkState.ToSource:
-                return $"$fullingporter_status_collecting ({_cargo.Count}/{capacity})";
-            case WorkState.ToDestination:
-                return $"$fullingporter_status_delivering ({_cargo.Count}/{capacity})";
-            case WorkState.ReturningHome:
-                return _returningFromWork
-                    ? "$fullingporter_status_returning"
-                    : "$fullingporter_status_idle";
-            default:
-                return "$fullingporter_status_idle";
-        }
+        return $"{token} ({_cargo.Count}/{capacity})";
     }
 
     private bool IsDestinationCoolingDown(Container container, string itemId)
@@ -702,11 +681,11 @@ internal sealed class PorterWorker : MonoBehaviour
         if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
         {
             _returningFromWork = true;
-            _state = WorkState.ReturningHome;
+            _state = PorterWorkState.ReturningHome;
             return;
         }
 
-        _state = WorkState.Idle;
+        _state = PorterWorkState.Idle;
         _nextScan = Time.time + ScanInterval;
     }
 
@@ -714,7 +693,7 @@ internal sealed class PorterWorker : MonoBehaviour
     {
         ClearBatch();
         _returningFromWork = true;
-        _state = WorkState.ReturningHome;
+        _state = PorterWorkState.ReturningHome;
     }
 
     private static string DescribeItem(ItemDrop.ItemData item)
