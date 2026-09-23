@@ -1,3 +1,4 @@
+using Jotunn.Managers;
 using UnityEngine;
 
 namespace FullingPorter.Porter;
@@ -131,8 +132,28 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     internal string BuildHoverText()
     {
         var status = _worker != null ? _worker.GetStatusText() : "$fullingporter_status_idle";
-        var text = $"{PorterName}\n{status}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
-        return global::Localization.instance.Localize(text);
+        var name = TranslateTokenWithSuffix(PorterName);
+        var localizedStatus = TranslateTokenWithSuffix(status);
+        var interact = LocalizationManager.Instance.TryTranslate("$fullingporter_interact");
+        return $"{name}\n{localizedStatus}\n[<color=yellow><b>E</b></color>] {interact}";
+    }
+
+    private static string TranslateTokenWithSuffix(string value)
+    {
+        if (string.IsNullOrEmpty(value) || value[0] != '
+    public string GetHoverName() => PorterName;
+    public float GetHoverOffset() => 1.5f;
+    public string GetHoverText() => BuildHoverText();
+}
+)
+            return value;
+
+        var suffixIndex = value.IndexOf(" (");
+        if (suffixIndex < 0)
+            return LocalizationManager.Instance.TryTranslate(value);
+
+        var token = value.Substring(0, suffixIndex);
+        return LocalizationManager.Instance.TryTranslate(token) + value.Substring(suffixIndex);
     }
 
     public string GetHoverName() => PorterName;
