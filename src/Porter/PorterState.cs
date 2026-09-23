@@ -8,8 +8,16 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     private const string DefaultName = "$fullingporter_name";
 
     private ZNetView _view;
+    private Character _character;
 
-    private void Awake() => _view = GetComponent<ZNetView>();
+    private void Awake()
+    {
+        _view = GetComponent<ZNetView>();
+        _character = GetComponent<Character>();
+        ApplyDisplayName();
+    }
+
+    private void Start() => ApplyDisplayName();
 
     internal string PorterName
     {
@@ -23,7 +31,14 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
             if (_view == null || !_view.IsValid()) return;
             if (!_view.IsOwner()) _view.ClaimOwnership();
             _view.GetZDO().Set(NameKey, string.IsNullOrWhiteSpace(value) ? DefaultName : value.Trim());
+            ApplyDisplayName();
         }
+    }
+
+    private void ApplyDisplayName()
+    {
+        if (_character != null)
+            _character.m_name = PorterName;
     }
 
     public string GetHoverName() => PorterName;
