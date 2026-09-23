@@ -544,7 +544,12 @@ internal sealed class PorterWorker : MonoBehaviour
     private void RemoveCargoEntryAndContinue(int index)
     {
         if (index >= 0 && index < _cargo.Count)
+        {
+            ContainerUseGuard.Release(_cargo[index].Destination);
             _cargo.RemoveAt(index);
+        }
+
+        ContainerUseGuard.Release(_source);
 
         // Never let one failed stack pin the rest of the trip to the same
         // destination. Re-evaluate the nearest destination from the remaining
@@ -738,6 +743,11 @@ internal sealed class PorterWorker : MonoBehaviour
     {
         _ai?.Halt();
         ResetMoveTracking();
+
+        ContainerUseGuard.Release(_source);
+        foreach (var entry in _cargo)
+            ContainerUseGuard.Release(entry?.Destination);
+
         _source = null;
         _cargo.Clear();
         _nextTransferTime = 0f;
