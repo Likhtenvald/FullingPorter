@@ -1,4 +1,5 @@
 using FullingPorter.Storage;
+using FullingPorter.Network;
 using HarmonyLib;
 using Jotunn.Managers;
 using UnityEngine;
@@ -23,9 +24,7 @@ internal static class ContainerInteractionPatch
             return;
         }
 
-        var enabled = SourceContainerMarker.Toggle(container);
-        __instance.Message(MessageHud.MessageType.Center,
-            enabled ? "$fullingporter_source_enabled" : "$fullingporter_source_disabled");
+        PorterRpc.RequestToggleSource(container);
     }
 }
 
