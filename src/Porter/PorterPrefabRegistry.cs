@@ -27,6 +27,18 @@ internal static class PorterPrefabRegistry
             return;
         }
 
+        // Strip the vanilla hostile AI from the template before it can ever
+        // become an active networked creature. PorterWorker owns porter movement
+        // and job selection; keeping MonsterAI would let the cloned Goblin run
+        // its normal combat/destruction behaviour.
+        var monsterAi = prefab.GetComponent<MonsterAI>();
+        if (monsterAi != null)
+            Object.DestroyImmediate(monsterAi);
+
+        var character = prefab.GetComponent<Character>();
+        if (character != null)
+            character.m_faction = Character.Faction.Players;
+
         var custom = new CustomPrefab(prefab, true);
         prefab.AddComponent<PorterState>();
         prefab.AddComponent<PorterWorker>();
