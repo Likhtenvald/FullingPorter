@@ -36,6 +36,25 @@ jobs:
               raise SystemExit(f"Release versions must match and use major.minor.patch: {versions}")
           print(f"FullingPorter version: {match.group(1)}")
           PY
+      - name: Validate Thunderstore package assets
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import struct
+
+          files = ["packaging/README.md", "packaging/CHANGELOG.md", "packaging/icon.png", "scripts/package-thunderstore.ps1"]
+          for filename in files:
+              if not pathlib.Path(filename).is_file() or not pathlib.Path(filename).stat().st_size:
+                  raise SystemExit(f"Missing package asset: {filename}")
+          icon = pathlib.Path("packaging/icon.png").read_bytes()
+          if icon[:16] != b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR" or struct.unpack(">II", icon[16:24]) != (256, 256):
+              raise SystemExit("Thunderstore icon must be a 256x256 PNG")
+          manifest = json.loads(pathlib.Path("manifest.json").read_text(encoding="utf-8"))
+          if len(manifest["description"]) > 250 or not manifest["dependencies"]:
+              raise SystemExit("Invalid Thunderstore manifest metadata")
+          print("Thunderstore package assets valid")
+          PY
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
