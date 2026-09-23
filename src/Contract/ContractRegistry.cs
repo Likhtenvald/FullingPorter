@@ -11,7 +11,7 @@ internal static class ContractRegistry
 
     internal static void Register()
     {
-        Contract = new CustomItem(ItemName, "YagluthDrop", new ItemConfig
+        Contract = new CustomItem(ItemName, "TrophyGoblin", new ItemConfig
         {
             Name = "$fullingporter_contract",
             Description = "$fullingporter_contract_desc",
