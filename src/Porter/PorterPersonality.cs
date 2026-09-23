@@ -9,11 +9,10 @@ internal sealed class PorterPersonality : MonoBehaviour
     {
         "$fullingporter_talk_idle_01",
         "$fullingporter_talk_idle_02",
-        "$fullingporter_talk_idle_03",
         "$fullingporter_talk_idle_04",
-        "$fullingporter_talk_idle_05",
         "$fullingporter_talk_idle_06",
-        "$fullingporter_talk_idle_07"
+        "$fullingporter_talk_idle_07",
+        "$fullingporter_talk_idle_08"
     };
 
     private static readonly string[] WorkingLines =
@@ -24,13 +23,12 @@ internal sealed class PorterPersonality : MonoBehaviour
         "$fullingporter_talk_work_04",
         "$fullingporter_talk_work_05",
         "$fullingporter_talk_work_06",
-        "$fullingporter_talk_work_07"
+        "$fullingporter_talk_work_08"
     };
 
     private static readonly string[] ReturningLines =
     {
         "$fullingporter_talk_return_01",
-        "$fullingporter_talk_return_02",
         "$fullingporter_talk_return_03",
         "$fullingporter_talk_return_04",
         "$fullingporter_talk_return_05"
@@ -41,8 +39,6 @@ internal sealed class PorterPersonality : MonoBehaviour
         "$fullingporter_talk_blocked_01",
         "$fullingporter_talk_blocked_02",
         "$fullingporter_talk_blocked_03",
-        "$fullingporter_talk_blocked_04",
-        "$fullingporter_talk_blocked_05",
         "$fullingporter_talk_blocked_06"
     };
 
