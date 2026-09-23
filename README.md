@@ -1,34 +1,85 @@
 # FullingPorter
 
-A Valheim logistics mod that adds a friendly Fuling porter hired with a contract from Haldor.
+A Valheim logistics mod that adds a friendly Fuling porter hired from Haldor. The porter moves items from player-selected source containers into QuickStackPlus Smart Storage without introducing a second destination-filter system.
 
-## Goals
-- Buy a Fuling Porter Contract from Haldor.
-- Spawn a persistent, renameable, non-aggressive porter at your base.
-- Mark source containers for the porter.
-- Route items into organized storage using QuickStackPlus Smart Storage filters.
-- Multiplayer-safe, server-authoritative item transfers.
+## Current behavior
 
-## Status
-Early development (0.1.0). The initial milestone establishes the plugin, configuration, QuickStackPlus Smart Storage bridge, and porter state/AI scaffolding.
+- Buy a **Fuling Porter Contract** from Haldor for **1500 coins**.
+- Use the contract to request a server-authoritative porter spawn.
+- Exactly **one porter per world** is allowed.
+- The porter is a normal friendly Fuling and is always immortal.
+- Default work radius: **30 m** from the porter's persistent home position.
+- Default carrying capacity: **10 distinct stacks per trip**.
+- The nearest usable source is selected first.
+- Cargo for the same destination is grouped before moving to another destination.
+- Full Smart Storage targets are temporarily cooled down instead of being retried continuously.
+- Item transfers are server-authoritative and remove from source only after destination insertion succeeds.
+- The porter returns to its persistent home after a trip.
 
-## Requirements
-- Valheim 1.0.x
-- BepInExPack Valheim 5.4.2350+
-- Jotunn 2.30.2+
-- QuickStackPlus 1.2.0+
-- ConditionalConfigSync 1.0.5+ (QuickStackPlus dependency)
+## Controls
+
+All keys are configurable in the BepInEx config.
+
+| Action | Default |
+| --- | --- |
+| Toggle hovered container as porter source | `Home` |
+| Rename hovered porter | `End` |
+| Dismiss hovered porter | `Delete` twice within 3 seconds |
+
+The porter hover UI shows only its name and current activity status. There is no misleading `[E] Talk` prompt.
 
 ## QuickStackPlus integration
-QuickStackPlus stores Smart Storage selections in the container ZDO under:
+
+QuickStackPlus Smart Storage remains the destination source of truth.
+
+QuickStackPlus 1.2.0 stores selected item prefab IDs in the container ZDO key:
+
 `Goneryx.QuickStackPlus.StorageFilter`
 
-Values are item IDs separated by U+001F. FullingPorter reads this existing data directly and does not maintain a competing storage-filter system.
+Values are separated by U+001F. FullingPorter reads that existing data and does not maintain its own storage-filter configuration.
+
+A container marked as a porter source is not considered a destination during that scan.
+
+## Networking and persistence
+
+Porter work and inventory transfers execute on the server. Player actions that mutate world state — spawning, source toggling, renaming and dismissal — are sent through a Jötunn RPC to the server.
+
+The one-porter invariant is persisted with a world global key containing the porter's ZDOID. This lets the server distinguish a real unloaded porter from a stale key left by a deleted object.
+
+The porter's name and home position are stored in its ZDO. Source markers are stored on the source container ZDO.
+
+## Configuration defaults
+
+- `Contract.Price = 1500`
+- `Porter.WorkRadius = 30`
+- `Porter.MaxStacksPerTrip = 10`
+- `Porter.SourceChestKey = Home`
+- `Porter.RenameKey = End`
+- `Porter.DismissKey = Delete`
+
+Older development configs may still contain obsolete entries such as `CanDie`; they are ignored by current code. Existing config values are not overwritten when defaults change.
+
+## Requirements
+
+- Current Valheim build used by the tester
+- BepInExPack Valheim 5.4.2350+
+- Jötunn 2.30.2+
+- QuickStackPlus 1.2.0+
+- ConditionalConfigSync 1.0.5+ through QuickStackPlus
 
 ## Development
-Set `VALHEIM_MANAGED` to Valheim's `valheim_Data/Managed` directory and `BEPINEX_CORE` to `BepInEx/core`, then build the project.
 
-See [docs/DESIGN.md](docs/DESIGN.md) for architecture and milestones.
+The safest local workflow is:
 
-## Testing
-The first in-game test should only begin after the build gate in [docs/PLAYTEST.md](docs/PLAYTEST.md) passes. Use a disposable world for the initial smoke test.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+```
+
+This builds against the installed Valheim/Jötunn assemblies and installs the DLL into the configured Thunderstore profile.
+
+See:
+- [docs/DESIGN.md](docs/DESIGN.md) for architecture.
+- [docs/PLAYTEST.md](docs/PLAYTEST.md) for the current test matrix.
+- [docs/BUILD.md](docs/BUILD.md) for local build details.
+
+FullingPorter is still in development. Use a disposable test world until the multiplayer and migration gates have passed.
