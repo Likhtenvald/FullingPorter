@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FullingPorter.Patches;
 
-[HarmonyPatch(typeof(Player), nameof(Player.Update))]
+[HarmonyPatch(typeof(Player), "Update")]
 internal static class ContainerInteractionPatch
 {
     private static void Postfix(Player __instance)
