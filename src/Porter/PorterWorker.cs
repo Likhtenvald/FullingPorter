@@ -114,6 +114,12 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
+        if (ContainerUseGuard.IsPlayerBusy(_source))
+        {
+            _nextTransferTime = Time.time + TransferFailureRetryDelay;
+            return;
+        }
+
         if (!MoveTowards(_source.transform.position, InteractionDistance, out var stuckAtSource))
         {
             if (stuckAtSource) AbortBatch();
@@ -183,6 +189,12 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
+        if (ContainerUseGuard.IsPlayerBusy(_source) || ContainerUseGuard.IsPlayerBusy(entry.Destination))
+        {
+            _nextTransferTime = Time.time + TransferFailureRetryDelay;
+            return;
+        }
+
         if (!MoveTowards(entry.Destination.transform.position, InteractionDistance, out var stuckAtDestination))
         {
             if (stuckAtDestination)
@@ -202,6 +214,14 @@ internal sealed class PorterWorker : MonoBehaviour
         _nextTransferTime = Time.time + TransferInterval;
 
         var transferResult = TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item);
+
+        if (transferResult == TransferService.TransferResult.ContainerBusy)
+        {
+            ResetOwnershipWait();
+            _nextTransferTime = Time.time + TransferFailureRetryDelay;
+            Plugin.Log.LogDebug($"Porter waiting for player to close a container for {DescribeItem(entry.Item)}.");
+            return;
+        }
 
         if (transferResult == TransferService.TransferResult.WaitingForOwnership)
         {
@@ -293,7 +313,9 @@ internal sealed class PorterWorker : MonoBehaviour
         var sources = new List<Container>();
         foreach (var candidateSource in containers)
         {
-            if (!IsUsable(candidateSource) || !SourceContainerMarker.IsSource(candidateSource)) continue;
+            if (!IsUsable(candidateSource) ||
+                ContainerUseGuard.IsPlayerBusy(candidateSource) ||
+                !SourceContainerMarker.IsSource(candidateSource)) continue;
             if ((candidateSource.transform.position - _home).sqrMagnitude > radiusSqr) continue;
             sources.Add(candidateSource);
         }
@@ -353,7 +375,10 @@ internal sealed class PorterWorker : MonoBehaviour
 
         foreach (var container in containers)
         {
-            if (!IsUsable(container) || container == source || SourceContainerMarker.IsSource(container)) continue;
+            if (!IsUsable(container) ||
+                ContainerUseGuard.IsPlayerBusy(container) ||
+                container == source ||
+                SourceContainerMarker.IsSource(container)) continue;
             if ((container.transform.position - _home).sqrMagnitude > radiusSqr) continue;
 
             if (!acceptedIds.TryGetValue(container, out var accepted))
