@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../src/Core/PorterRules.cs" Link="Core/PorterRules.cs" />
+    <Compile Include="../../src/Core/PorterServerRequestRules.cs" Link="Core/PorterServerRequestRules.cs" />
   </ItemGroup>
 </Project>
