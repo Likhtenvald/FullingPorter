@@ -27,13 +27,15 @@ internal static class PorterPrefabRegistry
             return;
         }
 
-        // Keep the vanilla MonsterAI component so Character/EnemyHud retain the
-        // BaseAI references they expect, but disable its Update loop. Removing the
-        // component entirely makes EnemyHud dereference a missing BaseAI every frame.
-        // PorterWorker is the only component that drives porter behaviour.
+        // Replace combat MonsterAI on the inactive cloned prefab with a passive
+        // BaseAI subclass. EnemyHud still sees a BaseAI, while locomotion and
+        // pathfinding stay vanilla and no hostile thinking is inherited.
         var monsterAi = prefab.GetComponent<MonsterAI>();
         if (monsterAi != null)
-            monsterAi.enabled = false;
+            Object.DestroyImmediate(monsterAi);
+
+        if (prefab.GetComponent<PorterMovementAI>() == null)
+            prefab.AddComponent<PorterMovementAI>();
 
         var character = prefab.GetComponent<Character>();
         if (character != null)
@@ -44,8 +46,6 @@ internal static class PorterPrefabRegistry
         prefab.AddComponent<PorterWorker>();
         prefab.AddComponent<PorterInteraction>();
 
-        // Runtime AI neutralisation is finalized in PorterWorker because
-        // vanilla Character/MonsterAI initialization order matters.
         PrefabManager.Instance.AddPrefab(custom);
     }
 }
