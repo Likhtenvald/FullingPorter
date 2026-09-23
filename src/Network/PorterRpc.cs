@@ -23,6 +23,8 @@ internal static class PorterRpc
     private static bool _spawnPending;
     private static readonly System.Reflection.MethodInfo GetServerPeerIdMethod =
         AccessTools.Method(typeof(ZRoutedRpc), "GetServerPeerID");
+    private static readonly System.Reflection.FieldInfo RoutedRpcIdField =
+        AccessTools.Field(typeof(ZRoutedRpc), "m_id");
 
     internal static void Register()
     {
@@ -102,25 +104,30 @@ internal static class PorterRpc
         if (routed == null)
             return 0L;
 
-        if (ZNet.instance != null && ZNet.instance.IsServer())
-            return routed.m_id;
-
-        if (GetServerPeerIdMethod == null)
-        {
-            Plugin.Log.LogWarning("ZRoutedRpc.GetServerPeerID is unavailable on this Valheim build.");
-            return 0L;
-        }
-
         try
         {
-            var value = GetServerPeerIdMethod.Invoke(routed, null);
-            return value is long peerId ? peerId : 0L;
+            if (GetServerPeerIdMethod != null)
+            {
+                var value = GetServerPeerIdMethod.Invoke(routed, null);
+                if (value is long peerId && peerId != 0L)
+                    return peerId;
+            }
+
+            if (ZNet.instance != null && ZNet.instance.IsServer() && RoutedRpcIdField != null)
+            {
+                var value = RoutedRpcIdField.GetValue(routed);
+                if (value is long localPeerId && localPeerId != 0L)
+                    return localPeerId;
+            }
         }
         catch (System.Exception ex)
         {
             Plugin.Log.LogWarning("Could not resolve Valheim server peer ID: " + ex.GetBaseException().Message);
             return 0L;
         }
+
+        Plugin.Log.LogWarning("Valheim server peer ID is unavailable on this build.");
+        return 0L;
     }
 
     private static IEnumerator ServerReceive(long sender, ZPackage pkg)
