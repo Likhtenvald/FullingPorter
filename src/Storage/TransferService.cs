@@ -67,9 +67,12 @@ internal static class TransferService
             var sourceInventory = source.GetInventory();
             var destinationInventory = destination.GetInventory();
             if (sourceInventory == null || destinationInventory == null) return TransferResult.Failed;
-            if (!sourceInventory.ContainsItem(item)) return TransferResult.SourceUnavailable;
-            if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.DestinationRejected;
-            if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.DestinationFull;
+            // ClaimOwnership can reload a container inventory, replacing its ItemData
+            // objects. Resolve the planned stack against the current server inventory.
+            var sourceItem = FindMatchingSourceStack(sourceInventory, item);
+            if (sourceItem == null) return TransferResult.SourceUnavailable;
+            if (!QuickStackPlusBridge.Accepts(destination, sourceItem)) return TransferResult.DestinationRejected;
+            if (!destinationInventory.CanAddItem(sourceItem, -1)) return TransferResult.DestinationFull;
 
             // Never pass the source ItemData instance directly into another
             // inventory. Valheim may partially merge the supplied object even when
@@ -77,8 +80,8 @@ internal static class TransferService
             // destination if the operation does not fully succeed.
             using (var destinationSnapshot = new InventorySnapshot(destinationInventory))
             {
-                var moved = item.Clone();
-                moved.m_stack = item.m_stack;
+                var moved = sourceItem.Clone();
+                moved.m_stack = sourceItem.m_stack;
                 moved.m_equipped = false;
 
                 if (!destinationInventory.AddItem(moved))
@@ -87,7 +90,7 @@ internal static class TransferService
                 // The source item has not been mutated. Remove it only after the
                 // destination accepted the complete cloned stack. If removal fails,
                 // disposing the snapshot rolls the destination back as well.
-                if (!sourceInventory.RemoveItem(item))
+                if (!sourceInventory.RemoveItem(sourceItem))
                     return TransferResult.SourceUnavailable;
 
                 destinationSnapshot.Commit();
@@ -99,6 +102,54 @@ internal static class TransferService
             ContainerUseGuard.Release(destination);
             ContainerUseGuard.Release(source);
         }
+    }
+
+    // A planned stack is a snapshot, not an inventory object reference. Reject
+    // changed stacks instead of silently transferring different contents from
+    // the same slot after another peer has owned the container.
+    internal static ItemDrop.ItemData FindMatchingSourceStack(Inventory inventory, ItemDrop.ItemData planned)
+    {
+        if (inventory == null || planned?.m_dropPrefab == null)
+            return null;
+
+        foreach (var current in inventory.GetAllItems())
+        {
+            if (current?.m_dropPrefab == null ||
+                current.m_gridPos.x != planned.m_gridPos.x ||
+                current.m_gridPos.y != planned.m_gridPos.y ||
+                current.m_dropPrefab.name != planned.m_dropPrefab.name ||
+                current.m_stack != planned.m_stack ||
+                current.m_quality != planned.m_quality ||
+                current.m_variant != planned.m_variant)
+                continue;
+
+            var actualData = current.m_customData;
+            var plannedData = planned.m_customData;
+            if (actualData == null || plannedData == null)
+            {
+                if (actualData == plannedData)
+                    return current;
+                continue;
+            }
+
+            if (actualData.Count != plannedData.Count)
+                continue;
+
+            var sameData = true;
+            foreach (var pair in plannedData)
+            {
+                if (!actualData.TryGetValue(pair.Key, out var value) || value != pair.Value)
+                {
+                    sameData = false;
+                    break;
+                }
+            }
+
+            if (sameData)
+                return current;
+        }
+
+        return null;
     }
 
     /// <summary>
