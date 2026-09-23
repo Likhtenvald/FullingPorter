@@ -135,17 +135,12 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         var name = TranslateTokenWithSuffix(PorterName);
         var localizedStatus = TranslateTokenWithSuffix(status);
         var interact = LocalizationManager.Instance.TryTranslate("$fullingporter_interact");
-        return $"{name}\n{localizedStatus}\n[<color=yellow><b>E</b></color>] {interact}";
+        return name + "\n" + localizedStatus + "\n[<color=yellow><b>E</b></color>] " + interact;
     }
 
     private static string TranslateTokenWithSuffix(string value)
     {
-        if (string.IsNullOrEmpty(value) || value[0] != '
-    public string GetHoverName() => PorterName;
-    public float GetHoverOffset() => 1.5f;
-    public string GetHoverText() => BuildHoverText();
-}
-)
+        if (string.IsNullOrEmpty(value) || value[0] != '$')
             return value;
 
         var suffixIndex = value.IndexOf(" (");
