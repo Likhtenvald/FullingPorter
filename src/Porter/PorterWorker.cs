@@ -6,6 +6,8 @@ namespace FullingPorter.Porter;
 
 internal sealed class PorterWorker : MonoBehaviour
 {
+    internal enum DialogueContext { Idle, Working, Returning, Blocked }
+
     private enum WorkState { Idle, ToSource, ToDestination, ReturningHome }
 
     private sealed class CargoEntry
@@ -33,6 +35,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
     private Container _activeDestination;
+    private float _blockedDialogueUntil;
 
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
@@ -223,6 +226,7 @@ internal sealed class PorterWorker : MonoBehaviour
         else if (transferResult == TransferService.TransferResult.DestinationFull)
         {
             SetDestinationCooldown(entry.Destination, entry.Item);
+            _blockedDialogueUntil = Time.time + DestinationRetryCooldown;
             Plugin.Log.LogDebug($"Porter destination is full for {DescribeItem(entry.Item)}; cooldown started.");
         }
         else if (transferResult == TransferService.TransferResult.DestinationRejected)
@@ -353,6 +357,23 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         return best;
+    }
+
+    internal DialogueContext GetDialogueContext()
+    {
+        if (Time.time < _blockedDialogueUntil)
+            return DialogueContext.Blocked;
+
+        switch (_state)
+        {
+            case WorkState.ToSource:
+            case WorkState.ToDestination:
+                return DialogueContext.Working;
+            case WorkState.ReturningHome:
+                return DialogueContext.Returning;
+            default:
+                return DialogueContext.Idle;
+        }
     }
 
     internal string GetStatusText()
