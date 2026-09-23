@@ -37,7 +37,7 @@ internal static class PorterRoutedRpcGuardPatch
                 return true;
             }
 
-            var peer = ZNet.instance.GetPeer(rpc);
+            var peer = FindPeerForRpc(rpc);
             if (peer == null || !peer.IsReady())
             {
                 Plugin.Log.LogWarning("Dropped FullingPorter RPC from unresolved or unready connection.");
@@ -59,5 +59,23 @@ internal static class PorterRoutedRpcGuardPatch
             pkg.SetPos(startPos);
             return true;
         }
+    }
+
+    private static ZNetPeer FindPeerForRpc(ZRpc rpc)
+    {
+        if (rpc == null || ZNet.instance == null)
+            return null;
+
+        var peers = ZNet.instance.GetPeers();
+        if (peers == null)
+            return null;
+
+        foreach (var peer in peers)
+        {
+            if (peer != null && peer.m_rpc == rpc)
+                return peer;
+        }
+
+        return null;
     }
 }
