@@ -66,28 +66,29 @@ internal static class TransferService
     }
 
     /// <summary>
-    /// Restores an inventory exactly if a tentative AddItem operation fails.
-    /// This protects against Valheim's partial-stack merge behavior.
+    /// Restores an inventory if a tentative AddItem operation fails, using only
+    /// public Inventory APIs available in the current Valheim assembly.
     /// </summary>
     private sealed class InventorySnapshot : System.IDisposable
     {
         private readonly Inventory _inventory;
         private readonly List<ItemDrop.ItemData> _items;
-        private readonly int[] _stacks;
-        private readonly Vector2i[] _positions;
         private bool _committed;
 
         internal InventorySnapshot(Inventory inventory)
         {
             _inventory = inventory;
-            _items = new List<ItemDrop.ItemData>(inventory.GetAllItems());
-            _stacks = new int[_items.Count];
-            _positions = new Vector2i[_items.Count];
+            _items = new List<ItemDrop.ItemData>();
 
-            for (var i = 0; i < _items.Count; ++i)
+            foreach (var item in inventory.GetAllItems())
             {
-                _stacks[i] = _items[i].m_stack;
-                _positions[i] = _items[i].m_gridPos;
+                if (item == null)
+                    continue;
+
+                var clone = item.Clone();
+                clone.m_stack = item.m_stack;
+                clone.m_gridPos = item.m_gridPos;
+                _items.Add(clone);
             }
         }
 
@@ -98,16 +99,17 @@ internal static class TransferService
             if (_committed)
                 return;
 
-            _inventory.m_inventory.Clear();
-            _inventory.m_inventory.AddRange(_items);
+            var currentItems = new List<ItemDrop.ItemData>(_inventory.GetAllItems());
+            foreach (var item in currentItems)
+                _inventory.RemoveItem(item);
 
-            for (var i = 0; i < _items.Count; ++i)
+            foreach (var item in _items)
             {
-                _items[i].m_stack = _stacks[i];
-                _items[i].m_gridPos = _positions[i];
+                var clone = item.Clone();
+                clone.m_stack = item.m_stack;
+                clone.m_gridPos = item.m_gridPos;
+                _inventory.AddItem(clone);
             }
-
-            _inventory.Changed();
         }
     }
 }
