@@ -15,5 +15,11 @@ jobs:
           test -f src/Plugin.cs
           test -f src/Porter/PorterWorker.cs
           test -f src/Storage/QuickStackPlusBridge.cs
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Run unit tests
+        run: dotnet test tests/FullingPorter.Tests/FullingPorter.Tests.csproj --configuration Release
       - name: Note
-        run: echo "Full compile requires Valheim/BepInEx/Jotunn assemblies and is performed in the local playtest environment."
+        run: echo "Full mod compile still requires Valheim/BepInEx/Jotunn assemblies and is performed in the local playtest environment."
