@@ -55,12 +55,14 @@ internal sealed class PorterPersonality : MonoBehaviour
     };
 
     private PorterWorker _worker;
+    private Talker _talker;
     private float _nextReactionTime;
     private const float ReactionCooldown = 2.5f;
 
     private void Awake()
     {
         _worker = GetComponent<PorterWorker>();
+        _talker = GetComponent<Talker>();
     }
 
     internal bool React(Player player)
@@ -72,7 +74,11 @@ internal sealed class PorterPersonality : MonoBehaviour
 
         var line = PickLine();
         var localized = LocalizationManager.Instance.TryTranslate(line);
-        player.Message(MessageHud.MessageType.Center, localized);
+
+        if (_talker != null)
+            _talker.Say(Talker.Type.Normal, localized);
+        else
+            player.Message(MessageHud.MessageType.Center, localized);
 
         PlayVoice();
         return true;
