@@ -17,8 +17,9 @@ internal static class PorterPrefabRegistry
             return;
         }
 
-        var custom = new CustomPrefab(PrefabName, source);
-        var prefab = custom.Prefab;
+        var prefab = Object.Instantiate(source);
+        prefab.name = PrefabName;
+        var custom = new CustomPrefab(prefab, true);
         prefab.AddComponent<PorterState>();
         prefab.AddComponent<PorterWorker>();
         prefab.AddComponent<PorterInteraction>();
