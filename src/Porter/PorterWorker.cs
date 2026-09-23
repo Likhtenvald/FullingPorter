@@ -29,6 +29,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private bool _trackingMove;
     private float _nextTransferTime;
     private bool _homeInitialized;
+    private int _activeTripCapacity;
 
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
@@ -214,6 +215,7 @@ internal sealed class PorterWorker : MonoBehaviour
         var radius = Plugin.WorkRadius.Value;
         var radiusSqr = radius * radius;
         var maxStacks = Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
+        _activeTripCapacity = maxStacks;
 
         // Unity scene-wide searches are relatively expensive. Take one snapshot
         // for the whole planning pass instead of repeating FindObjectsOfType for
@@ -300,12 +302,16 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal string GetStatusText()
     {
+        var capacity = _activeTripCapacity > 0
+            ? _activeTripCapacity
+            : Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
+
         switch (_state)
         {
             case WorkState.ToSource:
-                return $"$fullingporter_status_collecting ({_cargo.Count}/{Mathf.Max(1, Plugin.MaxStacksPerTrip.Value)})";
+                return $"$fullingporter_status_collecting ({_cargo.Count}/{capacity})";
             case WorkState.ToDestination:
-                return $"$fullingporter_status_delivering ({_cargo.Count}/{Mathf.Max(1, Plugin.MaxStacksPerTrip.Value)})";
+                return $"$fullingporter_status_delivering ({_cargo.Count}/{capacity})";
             case WorkState.ReturningHome:
                 return "$fullingporter_status_returning";
             default:
@@ -465,5 +471,6 @@ internal sealed class PorterWorker : MonoBehaviour
         _source = null;
         _cargo.Clear();
         _nextTransferTime = 0f;
+        _activeTripCapacity = 0;
     }
 }
