@@ -38,10 +38,11 @@ public sealed class PorterRulesTests
     }
 
     [Theory]
-    [InlineData(PorterWorkState.ToSource, PorterRules.CollectingStatus)]
-    [InlineData(PorterWorkState.ToDestination, PorterRules.DeliveringStatus)]
-    public void WorkingStatesExposeExpectedStatus(PorterWorkState state, string expected)
+    [InlineData((int)PorterWorkState.ToSource, PorterRules.CollectingStatus)]
+    [InlineData((int)PorterWorkState.ToDestination, PorterRules.DeliveringStatus)]
+    public void WorkingStatesExposeExpectedStatus(int stateValue, string expected)
     {
+        var state = (PorterWorkState)stateValue;
         Assert.Equal(expected, PorterRules.GetStatusToken(state, false, false));
     }
 
@@ -68,10 +69,11 @@ public sealed class PorterRulesTests
     }
 
     [Theory]
-    [InlineData(PorterWorkState.ToSource)]
-    [InlineData(PorterWorkState.ToDestination)]
-    public void TravelForWorkUsesWorkingDialogue(PorterWorkState state)
+    [InlineData((int)PorterWorkState.ToSource)]
+    [InlineData((int)PorterWorkState.ToDestination)]
+    public void TravelForWorkUsesWorkingDialogue(int stateValue)
     {
+        var state = (PorterWorkState)stateValue;
         Assert.Equal(
             PorterDialogueContext.Working,
             PorterRules.GetDialogueContext(state, false, false));
