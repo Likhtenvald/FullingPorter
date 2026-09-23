@@ -93,8 +93,7 @@ internal sealed class PorterPersonality : MonoBehaviour
 
         var speaker = new UserInfo
         {
-            Name = speakerName,
-            Gamertag = speakerName
+            Name = speakerName
         };
 
         var bubblePosition = transform.position + Vector3.up * 1.8f;
