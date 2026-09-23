@@ -1,36 +1,97 @@
 # FullingPorter design
 
 ## Core rule
-FullingPorter does not invent a second storage classification system. QuickStackPlus Smart Storage remains the source of truth for destination filters.
 
-QuickStackPlus 1.2.0 stores selected item prefab IDs in a container ZDO key named `Goneryx.QuickStackPlus.StorageFilter`, separated by U+001F.
+FullingPorter does not invent a second storage-classification system. QuickStackPlus Smart Storage remains the source of truth for destinations.
 
-## Planned flow
-1. Player buys a contract from Haldor.
-2. Using the contract spawns one persistent porter.
-3. Player explicitly marks one or more source containers.
-4. Server-authoritative porter reserves a source stack.
-5. Porter walks to source, takes up to configured capacity.
-6. Destination resolver prefers QuickStackPlus Smart Storage containers that accept the item.
-7. Porter walks to destination and transfers items atomically.
-8. If no destination is available/full, cargo is returned to source or retained safely; it is never deleted.
+QuickStackPlus 1.2.0 stores selected item prefab IDs under the container ZDO key `Goneryx.QuickStackPlus.StorageFilter`, separated by U+001F.
 
-## Multiplayer invariants
-- ZDO persists porter name, owner and assigned sources.
-- Only the ZNetView owner mutates porter state.
-- Container transfers are revalidated immediately before mutation.
-- No item is removed until destination capacity/reservation has been confirmed.
-- Ownership changes must not duplicate an in-flight transfer.
+## Work cycle
 
-## Milestones
-### 0.1.0 foundation
-Plugin/config, dependency declarations, prefab/state scaffolding, localization, QuickStackPlus filter bridge.
+1. The server scans containers within the configured radius around the porter's persistent home.
+2. Explicitly marked source containers are ordered by distance from the porter's current position.
+3. The nearest source with transferable cargo is selected.
+4. Up to `MaxStacksPerTrip` distinct stacks are planned; default capacity is 10.
+5. The porter walks to the source and revalidates every planned stack.
+6. Smart Storage destinations are resolved from QuickStackPlus filters.
+7. During delivery, one nearest destination is selected and all cargo assigned to that destination is processed before choosing another.
+8. Inventory/ZDO updates are rate-limited.
+9. The porter returns home after the trip.
 
-### 0.2.0 playable logistics
-Contract use/spawn, Haldor trade, source marking, pathing state machine, atomic transfer.
+No source item is removed unless destination insertion succeeds.
 
-### 0.3.0 UX/multiplayer hardening
-Rename dialog, status UI, permissions, recovery, dedicated-server tests.
+## Destination failures and cooldowns
 
-### 1.0.0
-Stable release, packaging, compatibility matrix and migration handling.
+A transfer result distinguishes:
+- success;
+- waiting for container ownership;
+- source item no longer available;
+- destination no longer accepts the item;
+- destination full;
+- other failure.
+
+Ownership waits have a 3-second timeout. Only a genuinely full destination starts the destination/item cooldown. Cooldown entries expire after 8 seconds and stale container/item entries are cleaned before planning a new batch.
+
+## Porter identity and one-per-world invariant
+
+Only one porter may exist in a world.
+
+Current builds persist a global key in the form:
+
+`FullingPorter.ActivePorter:<ZDO user id>:<ZDO object id>`
+
+When checking whether the slot is occupied, the server resolves the stored ZDOID with `ZDOMan.GetZDO`. An existing unloaded porter therefore still blocks another contract, while a key whose ZDO no longer exists is removed as stale.
+
+The old development boolean key `FullingPorter.ActivePorter` is migrated when a porter is loaded; if no loaded porter exists, it is treated as stale.
+
+## Network authority
+
+World mutations are server-owned.
+
+Jötunn CustomRPC is registered during plugin startup and handles:
+- contract spawn requests;
+- source container toggle requests;
+- porter rename requests;
+- porter dismissal requests.
+
+The contract is consumed on the requesting client only after the server confirms a successful spawn.
+
+The worker and `TransferService` execute only on the server. Source and destination ZNetViews are claimed before mutation, and transfers are revalidated immediately before inventory changes.
+
+## Persistence
+
+Porter ZDO:
+- custom name;
+- persistent home position.
+
+Container ZDO:
+- porter-source marker;
+- QuickStackPlus Smart Storage filter remains owned by QuickStackPlus.
+
+World global keys:
+- active porter ZDO identity.
+
+## UX defaults
+
+- Work radius: 30 m.
+- Capacity: 10 stacks.
+- Source toggle: `Home`.
+- Rename: `End`.
+- Dismiss: `Delete` twice within 3 seconds.
+- Porter is permanently immune to `Character.Damage`.
+- Hover text contains porter name plus current activity status.
+- EnemyHud is suppressed for the porter so its name does not remain permanently visible.
+
+## Contract
+
+Haldor sells one injected Fuling Porter Contract trade at the configured price, default 1500 coins. The current development item uses a Fuling-themed vanilla item template; a bespoke contract asset can replace it later without changing contract behavior.
+
+## Remaining release gates
+
+- Compile against the tester's current Valheim/Jötunn assemblies after every API-sensitive change.
+- Singleplayer regression pass.
+- Host/client RPC race tests, especially simultaneous contract use.
+- Reconnect and world restart persistence tests.
+- Dedicated-server test.
+- Final contract art/icon if desired.
+- Package/release metadata review.
