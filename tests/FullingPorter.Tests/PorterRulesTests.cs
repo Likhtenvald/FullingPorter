@@ -90,7 +90,17 @@ public sealed class PorterRulesTests
         Assert.Equal(expected, PorterRules.ShouldRetryTransfer(failures, maxFailures));
     }
 
+
     [Theory]
+    [InlineData(100L, 100L, true)]
+    [InlineData(100L, 101L, false)]
+    [InlineData(0L, 0L, false)]
+    public void RoutedSenderMustMatchActualPeer(long claimed, long actual, bool expected)
+    {
+        Assert.Equal(expected, PorterServerRequestRules.IsAuthenticatedSender(claimed, actual));
+    }
+
+[Theory]
     [InlineData(0f, 0f, 0f, 3f, 0f, 4f, true)]
     [InlineData(0f, 0f, 0f, 5f, 0f, 0f, true)]
     [InlineData(0f, 0f, 0f, 5.01f, 0f, 0f, false)]
