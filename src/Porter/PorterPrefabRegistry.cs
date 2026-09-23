@@ -31,7 +31,7 @@ internal static class PorterPrefabRegistry
         // roughly Fuling size. Collider dimensions shrink with the prefab too.
         // PorterMovementAI below uses a Humanoid path agent so navigation is
         // planned for door-sized passages rather than full-size troll clearance.
-        prefab.transform.localScale = source.transform.localScale * 0.45f;
+        prefab.transform.localScale = source.transform.localScale * 0.225f;
 
         // Replace combat MonsterAI on the inactive cloned prefab with a passive
         // BaseAI subclass. EnemyHud still sees a BaseAI, while locomotion and
