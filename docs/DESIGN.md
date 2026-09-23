@@ -94,7 +94,7 @@ Haldor sells one injected Fuling Porter Contract trade at the configured price, 
 - Compile against the tester's current Valheim/Jötunn assemblies after every API-sensitive change.
 - Singleplayer and host/client smoke tests were reported as passing on two PCs on 2026-09-23; repeat after network-related changes.
 - Host/client RPC race tests, especially simultaneous contract use.
-- Confirm missing and mismatched FullingPorter versions are rejected before multiplayer gameplay.
+- Host/client FullingPorter version-compatibility tests were reported passing on 2026-09-23; repeat the missing-mod and mismatch cases on a dedicated server.
 - Reconnect and world restart persistence tests.
 - Dedicated-server test.
 - Final contract art/icon if desired.
