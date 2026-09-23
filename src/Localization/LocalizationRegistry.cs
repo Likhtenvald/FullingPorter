@@ -25,31 +25,25 @@ internal static class LocalizationRegistry
         ["fullingporter_dismiss_confirm"] = "Press the dismissal key again within 3 seconds to terminate this contract",
         ["fullingporter_talk_idle_01"] = "Finally, no work!",
         ["fullingporter_talk_idle_02"] = "Porter carries. Viking watches.",
-        
-        ["fullingporter_talk_idle_04"] = "Coins to Haldor. Work to me. Very fair.",
-        
-        ["fullingporter_talk_idle_06"] = "I have seen berserkers carry less.",
-        ["fullingporter_talk_idle_07"] = "Work exists. Vacation does not.",
-        ["fullingporter_talk_idle_08"] = "That\'s how it goes, doggy.",
+        ["fullingporter_talk_idle_03"] = "Coins to Haldor. Work to me. Very fair.",
+        ["fullingporter_talk_idle_04"] = "I have seen berserkers carry less.",
+        ["fullingporter_talk_idle_05"] = "Work exists. Vacation does not.",
+        ["fullingporter_talk_idle_06"] = "That\'s how it goes, doggy.",
         ["fullingporter_talk_work_01"] = "Work again!?",
         ["fullingporter_talk_work_02"] = "Ten stacks! I have two hands!",
         ["fullingporter_talk_work_03"] = "I am porter, not portal!",
-        ["fullingporter_talk_work_08"] = "Help me...",
-        ["fullingporter_talk_work_04"] = "More wood? Did the forest happen to run out?",
-        ["fullingporter_talk_work_05"] = "You put it in chest. I put it in another.",
-        ["fullingporter_talk_work_06"] = "Walk there. Carry this. Walk back...",
-        
+        ["fullingporter_talk_work_04"] = "Help me...",
+        ["fullingporter_talk_work_05"] = "More wood? Did the forest happen to run out?",
+        ["fullingporter_talk_work_06"] = "You put it in chest. I put it in another.",
+        ["fullingporter_talk_work_07"] = "Walk there. Carry this. Walk back...",
         ["fullingporter_talk_return_01"] = "Done!",
-        
-        ["fullingporter_talk_return_03"] = "Cargo delivered. Please leave five stars.",
-        ["fullingporter_talk_return_04"] = "I survived another chest.",
-        ["fullingporter_talk_return_05"] = "Finished! Pretending to be busy now.",
+        ["fullingporter_talk_return_02"] = "Cargo delivered. Please leave five stars.",
+        ["fullingporter_talk_return_03"] = "I survived another chest.",
+        ["fullingporter_talk_idle_040"] = "Finished! Pretending to be busy now.",
         ["fullingporter_talk_blocked_01"] = "Chest full! I am not magic!",
         ["fullingporter_talk_blocked_02"] = "Where put it!? On your head?",
         ["fullingporter_talk_blocked_03"] = "No room. Build chest. Big chest.",
-        
-        
-        ["fullingporter_talk_blocked_06"] = "What do you want? Can\'t you see? Five-minute break!"
+        ["fullingporter_talk_idle_041"] = "What do you want? Can\'t you see? Five-minute break!"
     };
 
     private static readonly Dictionary<string, string> Russian = new()
@@ -72,37 +66,32 @@ internal static class LocalizationRegistry
         ["fullingporter_dismiss_confirm"] = "Нажмите клавишу увольнения ещё раз в течение 3 секунд, чтобы расторгнуть контракт",
         ["fullingporter_talk_idle_01"] = "Наконец-то нет работы!",
         ["fullingporter_talk_idle_02"] = "Грузчик носит. Викинг смотрит.",
-        
-        ["fullingporter_talk_idle_04"] = "Монеты Хальдору. Работа мне. Очень честно.",
-        
-        ["fullingporter_talk_idle_06"] = "Я видел берсерков. Они меньше таскают.",
-        ["fullingporter_talk_idle_07"] = "Работа есть. Отпуска нет.",
-        ["fullingporter_talk_idle_08"] = "Вот такие дела, собачка.",
+        ["fullingporter_talk_idle_03"] = "Монеты Хальдору. Работа мне. Очень честно.",
+        ["fullingporter_talk_idle_04"] = "Я видел берсерков. Они меньше таскают.",
+        ["fullingporter_talk_idle_05"] = "Работа есть. Отпуска нет.",
+        ["fullingporter_talk_idle_06"] = "Вот такие дела, собачка.",
         ["fullingporter_talk_work_01"] = "Опять работать!?",
         ["fullingporter_talk_work_02"] = "Десять стопок! У меня две руки!",
         ["fullingporter_talk_work_03"] = "Я грузчик, не портал!",
-        ["fullingporter_talk_work_08"] = "Помогите...",
-        ["fullingporter_talk_work_04"] = "Ещё дерево? У вас лес случайно не закончился?",
-        ["fullingporter_talk_work_05"] = "Ты кладёшь в сундук. Я кладу в другой.",
-        ["fullingporter_talk_work_06"] = "Иди туда. Неси это. Иди назад...",
-        
+        ["fullingporter_talk_work_04"] = "Помогите...",
+        ["fullingporter_talk_work_05"] = "Ещё дерево? У вас лес случайно не закончился?",
+        ["fullingporter_talk_work_06"] = "Ты кладёшь в сундук. Я кладу в другой.",
+        ["fullingporter_talk_work_07"] = "Иди туда. Неси это. Иди назад...",
         ["fullingporter_talk_return_01"] = "Готово!",
-        
-        ["fullingporter_talk_return_03"] = "Груз доставлен. Поставьте пять звезд.",
-        ["fullingporter_talk_return_04"] = "Я пережил ещё один сундук.",
-        ["fullingporter_talk_return_05"] = "Закончил! Теперь делаю вид, что занят.",
+        ["fullingporter_talk_return_02"] = "Груз доставлен. Поставьте пять звезд.",
+        ["fullingporter_talk_return_03"] = "Я пережил ещё один сундук.",
+        ["fullingporter_talk_idle_040"] = "Закончил! Теперь делаю вид, что занят.",
         ["fullingporter_talk_blocked_01"] = "Сундук полный! Я не маг!",
         ["fullingporter_talk_blocked_02"] = "Куда класть!? На голову тебе?",
         ["fullingporter_talk_blocked_03"] = "Места нет. Строй сундук. Большой сундук.",
-        
-        
-        ["fullingporter_talk_blocked_06"] = "Чего тебе? Не видишь? Перерыв пять минут!"
+        ["fullingporter_talk_idle_041"] = "Чего тебе? Не видишь? Перерыв пять минут!"
     };
 
     internal static void Register()
     {
-        LocalizationManager.Instance.AddLocalization("English", English);
-        LocalizationManager.Instance.AddLocalization("Russian", Russian);
+        var localization = LocalizationManager.Instance.GetLocalization();
+        localization.AddTranslation("English", English);
+        localization.AddTranslation("Russian", Russian);
         Plugin.Log.LogInfo("FullingPorter English and Russian localization registered.");
     }
 }
