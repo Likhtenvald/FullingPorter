@@ -30,6 +30,10 @@ Use a disposable world for development tests.
 
 - No permanent EnemyHud name is visible above the porter.
 - Looking at the porter shows only its name and activity status.
+- `E` while hovering the porter produces a localized contextual line and a Fuling vocalization.
+- Repeated `E` presses are rate-limited; no sound/message spam occurs.
+- Idle, working, returning and recently blocked/full-storage states can produce different dialogue pools.
+- `E` never opens rename input.
 - `End` while hovering the porter opens rename input.
 - Rename persists after reload.
 - `Home` while hovering a container toggles the porter-source marker.
