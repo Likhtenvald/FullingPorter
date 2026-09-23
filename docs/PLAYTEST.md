@@ -115,3 +115,16 @@ Run host + one client with identical mod versions.
 - World restart preserves porter identity and home.
 
 Do not use a valuable production world until these gates pass.
+
+
+## Regression: multiple item types to one Smart Storage
+
+1. Configure one QuickStackPlus Smart Storage chest to accept at least three different item types.
+2. Leave enough free capacity in that destination for every test stack.
+3. Put one stack of each accepted type into a single porter source chest.
+4. Let the porter complete one trip without touching either chest.
+5. Verify all planned stacks are delivered during that same visit to the destination.
+6. Verify the porter does not return to the source for an item type that already had reserved capacity in the first trip.
+7. Repeat with the destination nearly full and verify the porter does not over-plan capacity or lose/duplicate items.
+
+Expected result: one batch may contain several different item types for the same destination, and planned destination capacity is respected across the whole batch.
