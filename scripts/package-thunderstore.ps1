@@ -54,7 +54,7 @@ try {
     $archive = [IO.Compression.ZipFile]::OpenRead($outputPath)
     try {
         $actual = @($archive.Entries | ForEach-Object { $_.FullName } | Sort-Object)
-        $expected = @("CHANGELOG.md", "FullingPorter.dll", "README.md", "icon.png", "manifest.json")
+        $expected = @("CHANGELOG.md", "FullingPorter.dll", "README.md", "icon.png", "manifest.json") | Sort-Object
         if (($actual -join "|") -ne ($expected -join "|")) { throw "Unexpected ZIP contents: $($actual -join ', ')" }
     }
     finally { $archive.Dispose() }
