@@ -13,6 +13,6 @@
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(VALHEIM_MANAGED)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BepInEx"><HintPath>$(BEPINEX_CORE)\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BEPINEX_CORE)\0Harmony.dll</HintPath><Private>false</Private></Reference>
-    <Reference Include="Jotunn"><HintPath>$(VALHEIM_MANAGED)\..\..\BepInEx\plugins\Jotunn\Jotunn.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jotunn"><HintPath>$(JOTUNN_DLL)</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 </Project>
