@@ -67,6 +67,20 @@ internal static class PorterRules
         }
     }
 
+    internal static string GetStatusText(
+        PorterWorkState state,
+        bool returningFromWork,
+        bool blocked,
+        int cargoCount,
+        int capacity)
+    {
+        var token = GetStatusToken(state, returningFromWork, blocked);
+        if (token != CollectingStatus && token != DeliveringStatus)
+            return token;
+
+        return $"{token} ({cargoCount}/{capacity})";
+    }
+
     internal static bool ShouldRetryTransfer(int failureCount, int maxFailures)
     {
         return failureCount > 0 && maxFailures > 0 && failureCount < maxFailures;

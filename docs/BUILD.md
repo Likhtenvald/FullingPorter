@@ -51,6 +51,10 @@ BepInEx preserves existing values. If a development profile previously used pric
 
 An obsolete `CanDie` entry from older development builds is ignored; the porter is now always immortal.
 
+## Versioned multiplayer builds
+
+The server and every client must install FullingPorter 0.1.1 for this build. Jötunn rejects a missing mod or a different major, minor or patch version when connecting. Keep `Plugin.PluginVersion`, `FullingPorter.csproj` `<Version>` and `manifest.json` `version_number` identical; CI checks this. Increase all three before distributing any changed DLL, including a hotfix, because version checks cannot distinguish different binaries labeled with the same version.
+
 ## After an API-sensitive change
 
 Check the full compiler output. In particular verify:

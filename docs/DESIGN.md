@@ -56,13 +56,16 @@ Jötunn CustomRPC is registered during plugin startup and handles:
 
 The contract is consumed on the requesting client only after the server confirms a successful spawn.
 
-The worker and `TransferService` execute only on the server. Source and destination ZNetViews are claimed before mutation, and transfers are revalidated immediately before inventory changes.
+The worker and `TransferService` execute only on the server. Source and destination ZNetViews are claimed before mutation, and transfers are revalidated immediately before inventory changes. A planned stack records its original slot and item details; after ownership changes, the worker resolves the live inventory entry again before removing it. Container use flags and a transfer lock prevent simultaneous player and porter writes.
+
+The server publishes localized status tokens with remaining-stack counts and the dialogue context to the porter ZDO. Clients read those values without running worker AI. Jötunn requires FullingPorter on server and every client, and checks all three version components at connection time. `Contract.Price`, `Porter.WorkRadius` and `Porter.MaxStacksPerTrip` are server-synchronized; key bindings stay local.
 
 ## Persistence
 
 Porter ZDO:
 - custom name;
-- persistent home position.
+- persistent home position;
+- current activity status and dialogue context.
 
 Container ZDO:
 - porter-source marker;
@@ -89,8 +92,9 @@ Haldor sells one injected Fuling Porter Contract trade at the configured price, 
 ## Remaining release gates
 
 - Compile against the tester's current Valheim/Jötunn assemblies after every API-sensitive change.
-- Singleplayer regression pass.
+- Singleplayer and host/client smoke tests were reported as passing on two PCs on 2026-09-23; repeat after network-related changes.
 - Host/client RPC race tests, especially simultaneous contract use.
+- Confirm missing and mismatched FullingPorter versions are rejected before multiplayer gameplay.
 - Reconnect and world restart persistence tests.
 - Dedicated-server test.
 - Final contract art/icon if desired.

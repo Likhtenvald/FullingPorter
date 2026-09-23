@@ -505,19 +505,16 @@ internal sealed class PorterWorker : MonoBehaviour
             return zdo?.GetString(StatusKey, PorterRules.IdleStatus) ?? PorterRules.IdleStatus;
         }
 
-        var token = PorterRules.GetStatusToken(
-            _state,
-            _returningFromWork,
-            Time.time < _blockedStatusUntil);
-
-        if (token != PorterRules.CollectingStatus && token != PorterRules.DeliveringStatus)
-            return token;
-
         var capacity = _activeTripCapacity > 0
             ? _activeTripCapacity
             : Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
 
-        return $"{token} ({_cargo.Count}/{capacity})";
+        return PorterRules.GetStatusText(
+            _state,
+            _returningFromWork,
+            Time.time < _blockedStatusUntil,
+            _cargo.Count,
+            capacity);
     }
 
     private void PublishPresentation()

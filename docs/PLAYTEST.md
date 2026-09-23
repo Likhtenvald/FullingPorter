@@ -2,6 +2,8 @@
 
 Use a disposable world for development tests.
 
+Host and remote-client smoke tests on two PCs were reported passing on 2026-09-23 after the transfer, config and activity-status fixes. The checklist below remains the regression gate for future builds; dedicated-server and version-mismatch cases have not yet been confirmed.
+
 ## Build gate
 
 - [ ] Build against the exact Valheim installation used for testing.
@@ -88,7 +90,7 @@ Expected ownership behavior:
 
 ## Multiplayer gate
 
-Run host + one client with identical mod versions.
+Run host + one client with identical FullingPorter 0.1.1 builds. Check cargo, synced config and activity on both PCs after a version upgrade.
 
 1. Host buys/uses contract.
 2. Client sees the same porter, name, position and movement.
@@ -175,3 +177,15 @@ Expected result: an open source or destination chest pauses the porter. A chest 
 7. Disconnect the client and verify its local price, radius, and trip capacity are restored outside the server session.
 
 Expected result: contract price, work radius, and trip capacity follow the server while connected; input bindings remain local.
+
+
+## Multiplayer regression: FullingPorter version gate
+
+1. Install 0.1.1 on both host and remote client; verify connection succeeds and normal porter actions work.
+2. Remove FullingPorter from the remote client while leaving Jötunn installed; verify connection is refused with a mod compatibility error.
+3. Restore FullingPorter on the client and remove it from the host; verify connection is refused.
+4. Put 0.1.0 on the client and 0.1.1 on the host; verify connection is refused. Reverse the versions and repeat.
+5. Restore 0.1.1 on both sides; verify connection works again and the contract, config and activity status still synchronize.
+6. Repeat the missing-mod and mismatched-version cases on a dedicated server before release.
+
+Expected result: both sides need FullingPorter, with matching major, minor and patch versions. Ensure each newly built DLL has an incremented declared version; the check cannot distinguish two different binaries both labeled 0.1.1.

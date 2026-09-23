@@ -47,7 +47,9 @@ Porter work and inventory transfers execute on the server. Player actions that m
 
 The one-porter invariant is persisted with a world global key containing the porter's ZDOID. This lets the server distinguish a real unloaded porter from a stale key left by a deleted object.
 
-The porter's name and home position are stored in its ZDO. Source markers are stored on the source container ZDO.
+The porter's name, home position, activity status and dialogue context are stored in its ZDO. Clients display the server's current activity and remaining stack count. Source markers are stored on the source container ZDO.
+
+The server checks that every joining client has FullingPorter **0.1.1**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
 
 ## Configuration defaults
 
@@ -57,6 +59,8 @@ The porter's name and home position are stored in its ZDO. Source markers are st
 - `Porter.SourceChestKey = Home`
 - `Porter.RenameKey = End`
 - `Porter.DismissKey = Delete`
+
+The server synchronizes price, work radius and trip capacity to clients. Input keys remain local. Client values return after disconnecting.
 
 Older development configs may still contain obsolete entries such as `CanDie`; they are ignored by current code. Existing config values are not overwritten when defaults change.
 
@@ -83,4 +87,4 @@ See:
 - [docs/PLAYTEST.md](docs/PLAYTEST.md) for the current test matrix.
 - [docs/BUILD.md](docs/BUILD.md) for local build details.
 
-FullingPorter is still in development. Use a disposable test world until the multiplayer and migration gates have passed.
+Host and remote-client smoke tests passed on two PCs on 2026-09-23, covering cargo transfers, server config and activity status. Dedicated-server, mismatched-version and long-term save migration tests remain open. Use a disposable test world until those gates pass.

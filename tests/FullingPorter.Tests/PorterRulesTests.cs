@@ -46,6 +46,24 @@ public sealed class PorterRulesTests
         Assert.Equal(expected, PorterRules.GetStatusToken(state, false, false));
     }
 
+    [Theory]
+    [InlineData((int)PorterWorkState.ToSource, 10, 10, "$fullingporter_status_collecting (10/10)")]
+    [InlineData((int)PorterWorkState.ToDestination, 7, 10, "$fullingporter_status_delivering (7/10)")]
+    public void WorkStatusIncludesServerBatchProgress(int stateValue, int remaining, int capacity, string expected)
+    {
+        Assert.Equal(
+            expected,
+            PorterRules.GetStatusText((PorterWorkState)stateValue, false, false, remaining, capacity));
+    }
+
+    [Fact]
+    public void BlockedStatusDoesNotShowStaleBatchProgress()
+    {
+        Assert.Equal(
+            PorterRules.BlockedStatus,
+            PorterRules.GetStatusText(PorterWorkState.ToDestination, false, true, 3, 10));
+    }
+
     [Fact]
     public void BlockedDialogueOverridesPhysicalReturnState()
     {
@@ -100,7 +118,7 @@ public sealed class PorterRulesTests
         Assert.Equal(expected, PorterServerRequestRules.IsAuthenticatedSender(claimed, actual));
     }
 
-[Theory]
+    [Theory]
     [InlineData(0f, 0f, 0f, 3f, 0f, 4f, true)]
     [InlineData(0f, 0f, 0f, 5f, 0f, 0f, true)]
     [InlineData(0f, 0f, 0f, 5.01f, 0f, 0f, false)]
