@@ -15,7 +15,7 @@ internal sealed class PorterWorker : MonoBehaviour
     }
 
     private Character _character;
-    private MonsterAI _ai;
+    private PorterMovementAI _ai;
     private ZNetView _view;
     private WorkState _state;
     private Container _source;
@@ -29,7 +29,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private void Awake()
     {
         _character = GetComponent<Character>();
-        _ai = GetComponent<MonsterAI>();
+        _ai = GetComponent<PorterMovementAI>();
         _view = GetComponent<ZNetView>();
         _home = transform.position;
         if (_character != null) _character.m_faction = Character.Faction.Players;
@@ -234,16 +234,19 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private bool MoveTowards(Vector3 point)
     {
-        if (Vector3.Distance(transform.position, point) <= InteractionDistance) return true;
+        if (Vector3.Distance(transform.position, point) <= InteractionDistance)
+        {
+            _ai?.Halt();
+            return true;
+        }
 
-        var speed = _character != null ? 2.5f : 2f;
-        transform.position = Vector3.MoveTowards(transform.position, point, speed * Time.deltaTime);
+        if (_ai == null)
+        {
+            Plugin.Log.LogWarning("Porter movement AI is missing.");
+            return false;
+        }
 
-        var direction = point - transform.position;
-        direction.y = 0f;
-        if (direction.sqrMagnitude > 0.01f)
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), 8f * Time.deltaTime);
-
+        _ai.WalkTo(point, InteractionDistance);
         return false;
     }
 
@@ -269,6 +272,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void ClearBatch()
     {
+        _ai?.Halt();
         _source = null;
         _cargo.Clear();
     }
