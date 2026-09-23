@@ -8,13 +8,18 @@ internal sealed class PorterWorker : MonoBehaviour
 {
     private enum WorkState { Idle, ToSource, ToDestination, ReturningHome }
 
+    private sealed class CargoEntry
+    {
+        internal ItemDrop.ItemData Item;
+        internal Container Destination;
+    }
+
     private Character _character;
     private MonsterAI _ai;
     private ZNetView _view;
     private WorkState _state;
     private Container _source;
-    private Container _destination;
-    private ItemDrop.ItemData _cargo;
+    private readonly List<CargoEntry> _cargo = new();
     private Vector3 _home;
     private float _nextScan;
 
@@ -34,7 +39,6 @@ internal sealed class PorterWorker : MonoBehaviour
     {
         if (_view == null || !_view.IsValid() || !_view.IsOwner()) return;
 
-
         switch (_state)
         {
             case WorkState.Idle: TickIdle(); break;
@@ -49,40 +53,107 @@ internal sealed class PorterWorker : MonoBehaviour
         if (Time.time < _nextScan) return;
         _nextScan = Time.time + ScanInterval;
 
-        if (!TryFindJob(out _source, out _destination, out _cargo)) return;
-        _state = WorkState.ToSource;
+        if (TryFindBatch())
+        {
+            _state = WorkState.ToSource;
+            return;
+        }
+
+        if (Vector3.Distance(transform.position, _home) > InteractionDistance)
+            _state = WorkState.ReturningHome;
     }
 
     private void TickToSource()
     {
-        if (!IsUsable(_source) || _cargo == null) { ResetJob(); return; }
+        if (!IsUsable(_source))
+        {
+            AbortBatch();
+            return;
+        }
+
         if (!MoveTowards(_source.transform.position)) return;
 
-        // The item reference is revalidated before mutation.
-        if (!_source.GetInventory().ContainsItem(_cargo)) { ResetJob(); return; }
+        var inventory = _source.GetInventory();
+        if (inventory == null)
+        {
+            AbortBatch();
+            return;
+        }
+
+        // The batch is planned remotely, but every stack is revalidated only
+        // after the porter has physically reached the source chest.
+        for (var i = _cargo.Count - 1; i >= 0; --i)
+        {
+            var entry = _cargo[i];
+            if (entry.Item == null ||
+                !inventory.ContainsItem(entry.Item) ||
+                !IsUsable(entry.Destination) ||
+                !QuickStackPlusBridge.Accepts(entry.Destination, entry.Item) ||
+                !entry.Destination.GetInventory().CanAddItem(entry.Item, -1))
+            {
+                _cargo.RemoveAt(i);
+            }
+        }
+
+        if (_cargo.Count == 0)
+        {
+            FinishBatch();
+            return;
+        }
+
         _state = WorkState.ToDestination;
     }
 
     private void TickToDestination()
     {
-        if (!IsUsable(_source) || !IsUsable(_destination) || _cargo == null) { ResetJob(); return; }
-        if (!MoveTowards(_destination.transform.position)) return;
+        if (!IsUsable(_source) || _cargo.Count == 0)
+        {
+            FinishBatch();
+            return;
+        }
 
-        if (TransferService.TryMoveWholeStack(_source, _destination, _cargo))
-            Plugin.Log.LogDebug($"Porter moved {_cargo.m_shared.m_name}.");
+        var index = FindNearestCargoIndex();
+        if (index < 0)
+        {
+            FinishBatch();
+            return;
+        }
 
-        ResetJob();
+        var entry = _cargo[index];
+        if (!IsUsable(entry.Destination) || entry.Item == null)
+        {
+            _cargo.RemoveAt(index);
+            return;
+        }
+
+        if (!MoveTowards(entry.Destination.transform.position)) return;
+
+        if (TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item))
+            Plugin.Log.LogDebug($"Porter moved {entry.Item.m_shared.m_name}.");
+
+        // Whether the transfer succeeded or failed, do not get stuck on this
+        // destination. A failed stack will be reconsidered during the next scan.
+        _cargo.RemoveAt(index);
+
+        if (_cargo.Count == 0)
+            FinishBatch();
     }
 
     private void TickReturningHome()
     {
-        if (MoveTowards(_home)) _state = WorkState.Idle;
+        if (MoveTowards(_home))
+        {
+            _state = WorkState.Idle;
+            _nextScan = 0f;
+        }
     }
 
-    private bool TryFindJob(out Container source, out Container destination, out ItemDrop.ItemData item)
+    private bool TryFindBatch()
     {
-        source = null; destination = null; item = null;
+        ClearBatch();
+
         var radius = Plugin.WorkRadius.Value;
+        var maxStacks = Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
 
         foreach (var candidateSource in Object.FindObjectsOfType<Container>())
         {
@@ -90,16 +161,28 @@ internal sealed class PorterWorker : MonoBehaviour
             if (Vector3.Distance(_home, candidateSource.transform.position) > radius) continue;
 
             var items = candidateSource.GetInventory()?.GetAllItems();
-            if (items == null) continue;
+            if (items == null || items.Count == 0) continue;
 
             foreach (var candidateItem in items)
             {
                 var target = FindDestination(candidateItem, candidateSource, radius);
                 if (target == null) continue;
-                source = candidateSource; destination = target; item = candidateItem;
-                return true;
+
+                _cargo.Add(new CargoEntry
+                {
+                    Item = candidateItem,
+                    Destination = target
+                });
+
+                if (_cargo.Count >= maxStacks) break;
             }
+
+            if (_cargo.Count == 0) continue;
+
+            _source = candidateSource;
+            return true;
         }
+
         return false;
     }
 
@@ -107,28 +190,60 @@ internal sealed class PorterWorker : MonoBehaviour
     {
         Container best = null;
         var bestDistance = float.MaxValue;
+
         foreach (var container in Object.FindObjectsOfType<Container>())
         {
             if (!IsUsable(container) || container == source || SourceContainerMarker.IsSource(container)) continue;
             if (Vector3.Distance(_home, container.transform.position) > radius) continue;
             if (!QuickStackPlusBridge.Accepts(container, item)) continue;
-            if (!container.GetInventory().CanAddItem(item, -1)) continue;
+
+            var inventory = container.GetInventory();
+            if (inventory == null || !inventory.CanAddItem(item, -1)) continue;
 
             var distance = Vector3.Distance(source.transform.position, container.transform.position);
-            if (distance < bestDistance) { best = container; bestDistance = distance; }
+            if (distance < bestDistance)
+            {
+                best = container;
+                bestDistance = distance;
+            }
         }
+
         return best;
+    }
+
+    private int FindNearestCargoIndex()
+    {
+        var bestIndex = -1;
+        var bestDistance = float.MaxValue;
+
+        for (var i = 0; i < _cargo.Count; ++i)
+        {
+            var destination = _cargo[i].Destination;
+            if (!IsUsable(destination)) continue;
+
+            var distance = Vector3.Distance(transform.position, destination.transform.position);
+            if (distance < bestDistance)
+            {
+                bestIndex = i;
+                bestDistance = distance;
+            }
+        }
+
+        return bestIndex;
     }
 
     private bool MoveTowards(Vector3 point)
     {
         if (Vector3.Distance(transform.position, point) <= InteractionDistance) return true;
+
         var speed = _character != null ? 2.5f : 2f;
         transform.position = Vector3.MoveTowards(transform.position, point, speed * Time.deltaTime);
+
         var direction = point - transform.position;
         direction.y = 0f;
         if (direction.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), 8f * Time.deltaTime);
+
         return false;
     }
 
@@ -139,9 +254,22 @@ internal sealed class PorterWorker : MonoBehaviour
         return view != null && view.IsValid();
     }
 
-    private void ResetJob()
+    private void FinishBatch()
     {
-        _source = null; _destination = null; _cargo = null;
+        ClearBatch();
+        _state = WorkState.Idle;
+        _nextScan = 0f;
+    }
+
+    private void AbortBatch()
+    {
+        ClearBatch();
         _state = WorkState.ReturningHome;
+    }
+
+    private void ClearBatch()
+    {
+        _source = null;
+        _cargo.Clear();
     }
 }
