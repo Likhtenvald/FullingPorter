@@ -51,11 +51,7 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
 
     public bool Interact(Humanoid character, bool hold, bool alt)
     {
-        if (hold || character != Player.m_localPlayer)
-            return false;
-
-        RequestRename();
-        return true;
+        return false;
     }
 
     private void RequestRename()
