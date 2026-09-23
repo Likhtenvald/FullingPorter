@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FullingPorter.Storage;
@@ -40,10 +41,73 @@ internal static class TransferService
         if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.DestinationRejected;
         if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.DestinationFull;
 
-        // Inventory.AddItem(ItemData) clones/moves the stack into the destination.
-        // Remove only after AddItem reports success.
-        if (!destinationInventory.AddItem(item)) return TransferResult.Failed;
-        sourceInventory.RemoveItem(item);
-        return TransferResult.Success;
+        // Never pass the source ItemData instance directly into another
+        // inventory. Valheim may partially merge the supplied object even when
+        // AddItem ultimately returns false. Work on a clone and rollback the
+        // destination if the operation does not fully succeed.
+        using (var destinationSnapshot = new InventorySnapshot(destinationInventory))
+        {
+            var moved = item.Clone();
+            moved.m_stack = item.m_stack;
+            moved.m_equipped = false;
+
+            if (!destinationInventory.AddItem(moved))
+                return TransferResult.Failed;
+
+            // The source item has not been mutated. Remove it only after the
+            // destination accepted the complete cloned stack. If removal fails,
+            // disposing the snapshot rolls the destination back as well.
+            if (!sourceInventory.RemoveItem(item))
+                return TransferResult.SourceUnavailable;
+
+            destinationSnapshot.Commit();
+            return TransferResult.Success;
+        }
+    }
+
+    /// <summary>
+    /// Restores an inventory exactly if a tentative AddItem operation fails.
+    /// This protects against Valheim's partial-stack merge behavior.
+    /// </summary>
+    private sealed class InventorySnapshot : System.IDisposable
+    {
+        private readonly Inventory _inventory;
+        private readonly List<ItemDrop.ItemData> _items;
+        private readonly int[] _stacks;
+        private readonly Vector2i[] _positions;
+        private bool _committed;
+
+        internal InventorySnapshot(Inventory inventory)
+        {
+            _inventory = inventory;
+            _items = new List<ItemDrop.ItemData>(inventory.GetAllItems());
+            _stacks = new int[_items.Count];
+            _positions = new Vector2i[_items.Count];
+
+            for (var i = 0; i < _items.Count; ++i)
+            {
+                _stacks[i] = _items[i].m_stack;
+                _positions[i] = _items[i].m_gridPos;
+            }
+        }
+
+        internal void Commit() => _committed = true;
+
+        public void Dispose()
+        {
+            if (_committed)
+                return;
+
+            _inventory.m_inventory.Clear();
+            _inventory.m_inventory.AddRange(_items);
+
+            for (var i = 0; i < _items.Count; ++i)
+            {
+                _items[i].m_stack = _stacks[i];
+                _items[i].m_gridPos = _positions[i];
+            }
+
+            _inventory.Changed();
+        }
     }
 }
