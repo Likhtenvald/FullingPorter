@@ -8,7 +8,7 @@ namespace FullingPorter.Patches;
 /// Vanilla routed packets carry a client-written sender ID, so remote action
 /// validation must bind that claimed ID to the actual ZRpc connection first.
 /// </summary>
-[HarmonyPatch(typeof(ZRoutedRpc), nameof(ZRoutedRpc.RPC_RoutedRPC))]
+[HarmonyPatch(typeof(ZRoutedRpc), "RPC_RoutedRPC")]
 internal static class PorterRoutedRpcGuardPatch
 {
     private static readonly int PorterActionsHash =
