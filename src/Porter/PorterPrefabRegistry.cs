@@ -10,10 +10,10 @@ internal static class PorterPrefabRegistry
 
     internal static void Register()
     {
-        var source = PrefabManager.Instance.GetPrefab("Troll");
+        var source = PrefabManager.Instance.GetPrefab("Goblin");
         if (source == null)
         {
-            Plugin.Log.LogError("Vanilla Troll prefab was not found.");
+            Plugin.Log.LogError("Vanilla Goblin prefab was not found.");
             return;
         }
 
@@ -23,15 +23,9 @@ internal static class PorterPrefabRegistry
         var prefab = PrefabManager.Instance.CreateClonedPrefab(PrefabName, source);
         if (prefab == null)
         {
-            Plugin.Log.LogError("Could not clone the porter prefab from vanilla Troll.");
+            Plugin.Log.LogError("Could not clone the porter prefab from vanilla Goblin.");
             return;
         }
-
-        // Keep the troll's visual/animation rig, but shrink the entire body to
-        // roughly Fuling size. Collider dimensions shrink with the prefab too.
-        // PorterMovementAI below uses a Humanoid path agent so navigation is
-        // planned for door-sized passages rather than full-size troll clearance.
-        prefab.transform.localScale = source.transform.localScale * 0.225f;
 
         // Replace combat MonsterAI on the inactive cloned prefab with a passive
         // BaseAI subclass. EnemyHud still sees a BaseAI, while locomotion and
