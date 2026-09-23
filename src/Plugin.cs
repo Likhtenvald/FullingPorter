@@ -1,0 +1,41 @@
+using BepInEx;
+using BepInEx.Configuration;
+using Jotunn;
+using Jotunn.Managers;
+
+namespace FullingPorter;
+
+[BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+[BepInDependency(Jotunn.Main.ModGuid)]
+[BepInDependency(QuickStackPlusGuid, BepInDependency.DependencyFlags.HardDependency)]
+[NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
+public sealed class Plugin : BaseUnityPlugin
+{
+    public const string PluginGuid = "Likhtenvald.FullingPorter";
+    public const string PluginName = "FullingPorter";
+    public const string PluginVersion = "0.1.0";
+    public const string QuickStackPlusGuid = "Goneryx.QuickStackPlus";
+
+    internal static ConfigEntry<int> ContractPrice;
+    internal static ConfigEntry<float> WorkRadius;
+    internal static ConfigEntry<int> MaxStacksPerTrip;
+    internal static ConfigEntry<bool> PorterCanDie;
+
+    private void Awake()
+    {
+        ContractPrice = Config.Bind("Contract", "Price", 1500, "Haldor contract price in coins.");
+        WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
+        MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 4, "Maximum distinct stacks carried per trip.");
+        PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
+
+        PrefabManager.OnVanillaPrefabsAvailable += OnVanillaPrefabsAvailable;
+        Logger.LogInfo($"{PluginName} {PluginVersion} loaded.");
+    }
+
+    private void OnVanillaPrefabsAvailable()
+    {
+        Contract.ContractRegistry.Register();
+        Porter.PorterPrefabRegistry.Register();
+        PrefabManager.OnVanillaPrefabsAvailable -= OnVanillaPrefabsAvailable;
+    }
+}
