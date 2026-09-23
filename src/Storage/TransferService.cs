@@ -11,6 +11,18 @@ internal static class TransferService
     internal static bool TryMoveWholeStack(Container source, Container destination, ItemDrop.ItemData item)
     {
         if (!source || !destination || item == null || source == destination) return false;
+        if (ZNet.instance == null || !ZNet.instance.IsServer()) return false;
+
+        var sourceView = source.GetComponent<ZNetView>();
+        var destinationView = destination.GetComponent<ZNetView>();
+        if (sourceView == null || destinationView == null || !sourceView.IsValid() || !destinationView.IsValid())
+            return false;
+
+        if (!sourceView.IsOwner()) sourceView.ClaimOwnership();
+        if (!destinationView.IsOwner()) destinationView.ClaimOwnership();
+        if (!sourceView.IsOwner() || !destinationView.IsOwner())
+            return false;
+
         var sourceInventory = source.GetInventory();
         var destinationInventory = destination.GetInventory();
         if (sourceInventory == null || destinationInventory == null) return false;
