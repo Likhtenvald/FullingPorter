@@ -74,8 +74,8 @@ if ($InspectLanguages) {
         if (!$jotunnDll) { throw "Jotunn.dll not found." }
         $asm = [Reflection.Assembly]::LoadFrom($jotunnDll)
         $type = $asm.GetType("Jotunn.Managers.LocalizationManager")
-        $instanceProp = $type.GetProperty("Instance", [Reflection.BindingFlags]"Public,NonPublic,Static")
-        $instance = $instanceProp.GetValue($null, $null)
+        # Do not instantiate LocalizationManager outside the game. Its static
+        # initializer expects Valheim/Jotunn runtime state. Reflection metadata is enough.
         Write-Host "LocalizationManager properties/fields related to language:"
         $type.GetProperties([Reflection.BindingFlags]"Public,NonPublic,Instance,Static") |
             Where-Object { $_.Name -match "Lang|Local" } |
