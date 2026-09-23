@@ -1,5 +1,6 @@
 using FullingPorter.Storage;
 using HarmonyLib;
+using Jotunn.Managers;
 using UnityEngine;
 
 namespace FullingPorter.Patches;
@@ -37,7 +38,7 @@ internal static class ContainerHoverTextPatch
         if (!SourceContainerMarker.IsSource(__instance))
             return;
 
-        var sourceLabel = global::Localization.instance.Localize("$fullingporter_source_hover");
+        var sourceLabel = LocalizationManager.Instance.TryTranslate("$fullingporter_source_hover");
         __result += "\n<color=yellow>" + sourceLabel + "</color>";
     }
 }
