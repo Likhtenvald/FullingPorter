@@ -27,6 +27,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private float _lastProgressTime;
     private bool _trackingMove;
     private float _nextTransferTime;
+    private bool _homeInitialized;
 
     private const float InteractionDistance = 2.5f;
     private const float ScanInterval = 2f;
@@ -56,6 +57,13 @@ internal sealed class PorterWorker : MonoBehaviour
             _view.ClaimOwnership();
         if (!_view.IsOwner())
             return;
+
+        if (!_homeInitialized)
+        {
+            var state = GetComponent<PorterState>();
+            _home = state != null ? state.GetOrCreateHome(transform.position) : transform.position;
+            _homeInitialized = true;
+        }
 
         switch (_state)
         {
