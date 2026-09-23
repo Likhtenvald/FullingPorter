@@ -33,7 +33,6 @@ public sealed class Plugin : BaseUnityPlugin
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 4, "Maximum distinct stacks carried per trip.");
         PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
 
-        LocalizationRegistry.Register();
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
 
@@ -48,6 +47,7 @@ public sealed class Plugin : BaseUnityPlugin
 
     private void OnVanillaPrefabsAvailable()
     {
+        LocalizationRegistry.Register();
         Contract.ContractRegistry.Register();
         Porter.PorterPrefabRegistry.Register();
         PrefabManager.OnVanillaPrefabsAvailable -= OnVanillaPrefabsAvailable;
