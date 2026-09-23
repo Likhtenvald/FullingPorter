@@ -43,7 +43,20 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void Update()
     {
-        if (_view == null || !_view.IsValid() || !_view.IsOwner()) return;
+        if (_view == null || !_view.IsValid() || ZNet.instance == null) return;
+
+        // All porter work is server-authoritative. Clients render the replicated
+        // result but never mutate container inventories themselves.
+        if (!ZNet.instance.IsServer())
+        {
+            _ai?.Halt();
+            return;
+        }
+
+        if (!_view.IsOwner())
+            _view.ClaimOwnership();
+        if (!_view.IsOwner())
+            return;
 
         switch (_state)
         {
