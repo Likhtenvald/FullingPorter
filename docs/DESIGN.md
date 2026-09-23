@@ -95,3 +95,15 @@ Haldor sells one injected Fuling Porter Contract trade at the configured price, 
 - Dedicated-server test.
 - Final contract art/icon if desired.
 - Package/release metadata review.
+
+
+## RPC security boundary
+
+Remote porter actions are server-authoritative.
+
+- FullingPorter's routed RPC sender is authenticated against the actual inbound ZRpc peer before Jötunn dispatches the package.
+- Remote spawn ignores the client-supplied world position and uses the server-observed peer position.
+- Source assignment, rename, and dismissal require the requesting peer to be within 5 metres of the target.
+- Remote actions are rate-limited server-side.
+- Rename payloads are capped at the same 24-character limit as the client UI.
+- The server still cannot independently inspect a remote Valheim character's local inventory, so possession of the contract remains a client-side trust boundary. The server still enforces the one-porter-per-world rule and authoritative spawn position.
