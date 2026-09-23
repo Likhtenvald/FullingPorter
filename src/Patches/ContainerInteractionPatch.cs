@@ -37,6 +37,6 @@ internal static class ContainerHoverTextPatch
         if (!SourceContainerMarker.IsSource(__instance))
             return;
 
-        __result += "\n<color=yellow>$fullingporter_source_hover</color>";
+        __result += $"\n<color=yellow>{Localization.instance.Localize("$fullingporter_source_hover")}</color>";
     }
 }
