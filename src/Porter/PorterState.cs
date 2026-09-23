@@ -19,6 +19,8 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     private ZNetView _view;
     private Character _character;
     private PorterWorker _worker;
+    private float _nextNameRefresh;
+    private const float NameRefreshInterval = 0.5f;
 
     private void Awake()
     {
@@ -26,6 +28,16 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         _character = GetComponent<Character>();
         _worker = GetComponent<PorterWorker>();
         ApplyDisplayName();
+    }
+
+    private void Update()
+    {
+        if (Time.time < _nextNameRefresh)
+            return;
+
+        _nextNameRefresh = Time.time + NameRefreshInterval;
+        if (_character != null && _character.m_name != PorterName)
+            ApplyDisplayName();
     }
 
     private void Start()
@@ -203,11 +215,6 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     internal bool SetNameServer(string value)
     {
         if (ZNet.instance == null || !ZNet.instance.IsServer() || _view == null || !_view.IsValid())
-            return false;
-
-        if (!_view.IsOwner())
-            _view.ClaimOwnership();
-        if (!_view.IsOwner())
             return false;
 
         var zdo = _view.GetZDO();
