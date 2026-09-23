@@ -275,7 +275,7 @@ internal sealed class PorterWorker : MonoBehaviour
         // Unity scene-wide searches are relatively expensive. Take one snapshot
         // for the whole planning pass instead of repeating FindObjectsOfType for
         // every candidate item.
-        var containers = Object.FindObjectsOfType<Container>();
+        var containers = Object.FindObjectsByType<Container>(FindObjectsSortMode.None);
         var acceptedIds = new Dictionary<Container, HashSet<string>>();
 
         var sources = new List<Container>();
