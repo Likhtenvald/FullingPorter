@@ -40,8 +40,10 @@ internal static class PorterPrefabRegistry
         if (monsterAi != null)
             Object.DestroyImmediate(monsterAi);
 
-        if (prefab.GetComponent<PorterMovementAI>() == null)
-            prefab.AddComponent<PorterMovementAI>();
+        var movementAi = prefab.GetComponent<PorterMovementAI>();
+        if (movementAi == null)
+            movementAi = prefab.AddComponent<PorterMovementAI>();
+        movementAi.m_pathAgentType = Pathfinding.AgentType.Humanoid;
 
         var character = prefab.GetComponent<Character>();
         if (character != null)
