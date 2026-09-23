@@ -10,7 +10,6 @@ namespace FullingPorter;
 [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
 [BepInDependency(Jotunn.Main.ModGuid)]
 [BepInDependency(QuickStackPlusGuid, BepInDependency.DependencyFlags.HardDependency)]
-[NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
 public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "Likhtenvald.FullingPorter";
