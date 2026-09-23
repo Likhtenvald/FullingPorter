@@ -38,6 +38,6 @@ internal static class LocalizationRegistry
     private static void RegisterLanguage(string language, Dictionary<string, string> words)
     {
         foreach (var pair in words)
-            LocalizationManager.Instance.AddToken(language, pair.Key, pair.Value);
+            LocalizationManager.Instance.AddToken(language, "$" + pair.Key, pair.Value);
     }
 }
