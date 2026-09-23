@@ -10,10 +10,10 @@ internal static class PorterPrefabRegistry
 
     internal static void Register()
     {
-        var source = PrefabManager.Instance.GetPrefab("Goblin");
+        var source = PrefabManager.Instance.GetPrefab("GoblinBrute");
         if (source == null)
         {
-            Plugin.Log.LogError("Vanilla Goblin prefab was not found.");
+            Plugin.Log.LogError("Vanilla Fuling Berserker prefab (GoblinBrute) was not found.");
             return;
         }
 
@@ -23,7 +23,7 @@ internal static class PorterPrefabRegistry
         var prefab = PrefabManager.Instance.CreateClonedPrefab(PrefabName, source);
         if (prefab == null)
         {
-            Plugin.Log.LogError("Could not clone the porter prefab from vanilla Goblin.");
+            Plugin.Log.LogError("Could not clone the porter prefab from vanilla Fuling Berserker.");
             return;
         }
 
