@@ -9,12 +9,14 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
 
     private PorterState _state;
     private ZNetView _view;
+    private PorterPersonality _personality;
     private float _dismissConfirmUntil;
 
     private void Awake()
     {
         _state = GetComponent<PorterState>();
         _view = GetComponent<ZNetView>();
+        _personality = GetComponent<PorterPersonality>();
     }
 
     private void Update()
@@ -51,7 +53,10 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
 
     public bool Interact(Humanoid character, bool hold, bool alt)
     {
-        return false;
+        if (hold || character != Player.m_localPlayer)
+            return false;
+
+        return _personality != null && _personality.React(Player.m_localPlayer);
     }
 
     private void RequestRename()
