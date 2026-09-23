@@ -1,3 +1,4 @@
+using System.Globalization;
 using Jotunn.Managers;
 using UnityEngine;
 
@@ -6,6 +7,7 @@ namespace FullingPorter.Porter;
 internal sealed class PorterState : MonoBehaviour, Hoverable
 {
     internal const string WorldPresenceKey = "FullingPorter.ActivePorter";
+    private const string WorldPresencePrefix = WorldPresenceKey + ":";
 
     private const string NameKey = "FullingPorter.Name";
     private const string HomeKey = "FullingPorter.Home";
@@ -44,7 +46,7 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         }
 
         _serverActive = this;
-        MarkWorldOccupied();
+        MarkWorldOccupied(_view);
     }
 
     private void OnDestroy()
@@ -63,26 +65,107 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
             if (porter == null) continue;
 
             _serverActive = porter;
-            MarkWorldOccupied();
+            MarkWorldOccupied(porter._view);
             return true;
         }
 
-        // On this Valheim build there is no public ZDOMan API for enumerating
-        // unloaded instances by prefab, so avoid pretending we can prove their
-        // absence. Keep an existing world key as the conservative fallback.
-        return ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(WorldPresenceKey);
+        var zone = ZoneSystem.instance;
+        if (zone == null)
+            return false;
+
+        var legacyKeyFound = false;
+        var staleKeys = new System.Collections.Generic.List<string>();
+
+        foreach (var key in zone.GetGlobalKeys())
+        {
+            if (key == WorldPresenceKey)
+            {
+                legacyKeyFound = true;
+                continue;
+            }
+
+            if (!key.StartsWith(WorldPresencePrefix))
+                continue;
+
+            if (!TryParseWorldKey(key, out var id) || ZDOMan.instance == null || ZDOMan.instance.GetZDO(id) == null)
+            {
+                staleKeys.Add(key);
+                continue;
+            }
+
+            return true;
+        }
+
+        foreach (var staleKey in staleKeys)
+            zone.RemoveGlobalKey(staleKey);
+
+        // Development builds before the ZDOID-backed key used one bare boolean
+        // key. If no loaded porter can migrate it, treat it as stale so a deleted
+        // porter cannot permanently lock the world.
+        if (legacyKeyFound)
+            zone.RemoveGlobalKey(WorldPresenceKey);
+
+        return false;
     }
 
-    internal static void MarkWorldOccupied()
+    internal static void MarkWorldOccupied(ZNetView view)
     {
-        if (ZoneSystem.instance != null && !ZoneSystem.instance.GetGlobalKey(WorldPresenceKey))
-            ZoneSystem.instance.SetGlobalKey(WorldPresenceKey);
+        var zone = ZoneSystem.instance;
+        var zdo = view != null && view.IsValid() ? view.GetZDO() : null;
+        if (zone == null || zdo == null)
+            return;
+
+        if (zone.GetGlobalKey(WorldPresenceKey))
+            zone.RemoveGlobalKey(WorldPresenceKey);
+
+        var key = MakeWorldKey(zdo.m_uid);
+        if (!zone.GetGlobalKey(key))
+            zone.SetGlobalKey(key);
     }
 
     internal static void ClearWorldOccupied()
     {
-        if (ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(WorldPresenceKey))
-            ZoneSystem.instance.RemoveGlobalKey(WorldPresenceKey);
+        var zone = ZoneSystem.instance;
+        if (zone == null)
+            return;
+
+        var keys = new System.Collections.Generic.List<string>(zone.GetGlobalKeys());
+        foreach (var key in keys)
+        {
+            if (key == WorldPresenceKey || key.StartsWith(WorldPresencePrefix))
+                zone.RemoveGlobalKey(key);
+        }
+
+        _serverActive = null;
+    }
+
+    private static string MakeWorldKey(ZDOID id)
+    {
+        return WorldPresencePrefix
+            + id.UserID.ToString(CultureInfo.InvariantCulture)
+            + ":"
+            + id.ID.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static bool TryParseWorldKey(string key, out ZDOID id)
+    {
+        id = ZDOID.None;
+        if (string.IsNullOrEmpty(key) || !key.StartsWith(WorldPresencePrefix))
+            return false;
+
+        var value = key.Substring(WorldPresencePrefix.Length);
+        var parts = value.Split(':');
+        if (parts.Length != 2)
+            return false;
+
+        if (!long.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId) ||
+            !uint.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var objectId))
+        {
+            return false;
+        }
+
+        id = new ZDOID(userId, objectId);
+        return true;
     }
 
     internal Vector3 GetOrCreateHome(Vector3 fallback)
