@@ -1,5 +1,6 @@
 using System.Collections;
 using FullingPorter.Contract;
+using FullingPorter.Core;
 using FullingPorter.Porter;
 using FullingPorter.Storage;
 using Jotunn.Entities;
@@ -27,6 +28,7 @@ internal static class PorterRpc
         AccessTools.Method(typeof(ZRoutedRpc), "GetServerPeerID");
     private static readonly System.Reflection.FieldInfo RoutedRpcIdField =
         AccessTools.Field(typeof(ZRoutedRpc), "m_id");
+    private static readonly System.Collections.Generic.Dictionary<long, float> LastActionAt = new();
 
     internal static void Register()
     {
@@ -69,7 +71,6 @@ internal static class PorterRpc
         _spawnPending = true;
         var pkg = new ZPackage();
         pkg.Write((int)ActionCode.Spawn);
-        pkg.Write(position);
         pkg.Write(forward);
         _rpc.SendPackage(serverPeerId, pkg);
     }
@@ -229,9 +230,15 @@ internal static class PorterRpc
 
     private static void HandleSpawn(long sender, ZPackage pkg)
     {
-        var position = pkg.ReadVector3();
+        if (!TryResolveRemoteSender(sender, out var peer, out var senderPosition) ||
+            !TryConsumeActionBudget(sender))
+        {
+            SendResult(sender, ActionCode.Spawn, false);
+            return;
+        }
+
         var forward = pkg.ReadVector3();
-        SendResult(sender, ActionCode.Spawn, TrySpawnServer(position, forward));
+        SendResult(sender, ActionCode.Spawn, TrySpawnServer(senderPosition, forward));
     }
 
     private static bool TrySpawnServer(Vector3 position, Vector3 forward)
@@ -267,7 +274,9 @@ internal static class PorterRpc
     {
         var target = FindObject(pkg.ReadZDOID());
         var container = target != null ? target.GetComponent<Container>() : null;
-        if (container == null || !SourceContainerMarker.TryToggleServer(container, out var enabled))
+        if (container == null ||
+            !ValidateRemoteTargetAction(sender, target.transform.position) ||
+            !SourceContainerMarker.TryToggleServer(container, out var enabled))
         {
             SendResult(sender, ActionCode.ToggleSource, false);
             return;
@@ -283,7 +292,8 @@ internal static class PorterRpc
         var target = FindObject(pkg.ReadZDOID());
         var view = target != null ? target.GetComponent<ZNetView>() : null;
         var state = target != null ? target.GetComponent<PorterState>() : null;
-        if (view == null || state == null || ZNetScene.instance == null)
+        if (view == null || state == null || ZNetScene.instance == null ||
+            !ValidateRemoteTargetAction(sender, target.transform.position))
         {
             SendResult(sender, ActionCode.Dismiss, false);
             yield break;
@@ -323,14 +333,74 @@ internal static class PorterRpc
     {
         var target = FindObject(pkg.ReadZDOID());
         var state = target != null ? target.GetComponent<PorterState>() : null;
-        if (state == null)
+        var name = pkg.ReadString();
+
+        if (state == null ||
+            !PorterServerRequestRules.IsRenamePayloadValid(name) ||
+            !ValidateRemoteTargetAction(sender, target.transform.position))
         {
             SendResult(sender, ActionCode.Rename, false);
             return;
         }
 
-        var success = state.SetNameServer(pkg.ReadString());
+        var success = state.SetNameServer(name);
         SendResult(sender, ActionCode.Rename, success);
+    }
+
+    private static bool ValidateRemoteTargetAction(long sender, Vector3 targetPosition)
+    {
+        if (!TryResolveRemoteSender(sender, out _, out var senderPosition))
+            return false;
+
+        if (!TryConsumeActionBudget(sender))
+            return false;
+
+        var allowed = PorterServerRequestRules.IsWithinInteractionDistance(
+            senderPosition.x,
+            senderPosition.y,
+            senderPosition.z,
+            targetPosition.x,
+            targetPosition.y,
+            targetPosition.z);
+
+        if (!allowed)
+            Plugin.Log.LogWarning($"Rejected porter RPC from peer {sender}: target is out of interaction range.");
+
+        return allowed;
+    }
+
+    private static bool TryResolveRemoteSender(long sender, out ZNetPeer peer, out Vector3 position)
+    {
+        peer = null;
+        position = Vector3.zero;
+
+        if (ZNet.instance == null || !ZNet.instance.IsServer())
+            return false;
+
+        peer = ZNet.instance.GetPeer(sender);
+        if (peer == null || !peer.IsReady() || peer.m_characterID.IsNone())
+        {
+            Plugin.Log.LogWarning($"Rejected porter RPC from unknown or unready peer {sender}.");
+            return false;
+        }
+
+        var characterZdo = ZDOMan.instance?.GetZDO(peer.m_characterID);
+        position = characterZdo != null ? characterZdo.GetPosition() : peer.m_refPos;
+        return true;
+    }
+
+    private static bool TryConsumeActionBudget(long sender)
+    {
+        var now = Time.time;
+        var last = LastActionAt.TryGetValue(sender, out var recorded) ? recorded : -1f;
+        if (!PorterServerRequestRules.IsActionRateAllowed(now, last))
+        {
+            Plugin.Log.LogWarning($"Rejected porter RPC from peer {sender}: action rate limit exceeded.");
+            return false;
+        }
+
+        LastActionAt[sender] = now;
+        return true;
     }
 
     private static GameObject FindObject(ZDOID id)
