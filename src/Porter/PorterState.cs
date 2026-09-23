@@ -7,6 +7,8 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     internal const string WorldPresenceKey = "FullingPorter.ActivePorter";
 
     private const string NameKey = "FullingPorter.Name";
+    private const string HomeKey = "FullingPorter.Home";
+    private const string HasHomeKey = "FullingPorter.HasHome";
     private const string DefaultName = "$fullingporter_name";
 
     private static PorterState _serverActive;
@@ -75,6 +77,28 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     {
         if (ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(WorldPresenceKey))
             ZoneSystem.instance.RemoveGlobalKey(WorldPresenceKey);
+    }
+
+    internal Vector3 GetOrCreateHome(Vector3 fallback)
+    {
+        if (_view == null || !_view.IsValid())
+            return fallback;
+
+        var zdo = _view.GetZDO();
+        if (zdo == null)
+            return fallback;
+
+        if (zdo.GetBool(HasHomeKey, false))
+            return zdo.GetVec3(HomeKey, fallback);
+
+        if (!_view.IsOwner())
+            _view.ClaimOwnership();
+        if (!_view.IsOwner())
+            return fallback;
+
+        zdo.Set(HomeKey, fallback);
+        zdo.Set(HasHomeKey, true);
+        return fallback;
     }
 
     internal string PorterName
