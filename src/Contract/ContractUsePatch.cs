@@ -17,7 +17,7 @@ internal static class ContractUsePatch
         if (forward.sqrMagnitude < 0.01f)
             forward = Vector3.forward;
 
-        PorterRpc.RequestSpawn(__instance.transform.position, forward);
+        PorterRpc.RequestSpawn(__instance.transform.position, forward, inventory, item);
         return false;
     }
 }
