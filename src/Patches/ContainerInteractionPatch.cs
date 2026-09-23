@@ -4,17 +4,26 @@ using UnityEngine;
 
 namespace FullingPorter.Patches;
 
-[HarmonyPatch(typeof(Container), nameof(Container.Interact))]
+[HarmonyPatch(typeof(Player), nameof(Player.Update))]
 internal static class ContainerInteractionPatch
 {
-    private static bool Prefix(Container __instance, Humanoid character, bool hold, bool alt, ref bool __result)
+    private static void Postfix(Player __instance)
     {
-        if (hold || !alt || character != Player.m_localPlayer) return true;
+        if (__instance != Player.m_localPlayer || Plugin.SourceChestKey == null ||
+            !Input.GetKeyDown(Plugin.SourceChestKey.Value))
+        {
+            return;
+        }
 
-        var enabled = SourceContainerMarker.Toggle(__instance);
-        character.Message(MessageHud.MessageType.Center,
+        var hover = __instance.GetHoverObject();
+        var container = hover ? hover.GetComponentInParent<Container>() : null;
+        if (container == null)
+        {
+            return;
+        }
+
+        var enabled = SourceContainerMarker.Toggle(container);
+        __instance.Message(MessageHud.MessageType.Center,
             enabled ? "$fullingporter_source_enabled" : "$fullingporter_source_disabled");
-        __result = true;
-        return false;
     }
 }
