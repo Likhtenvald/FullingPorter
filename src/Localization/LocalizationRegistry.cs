@@ -24,29 +24,31 @@ internal static class LocalizationRegistry
         ["fullingporter_dismiss_confirm"] = "Press the dismissal key again within 3 seconds to terminate this contract",
         ["fullingporter_talk_idle_01"] = "Finally, no work!",
         ["fullingporter_talk_idle_02"] = "Porter carries. Viking watches.",
-        ["fullingporter_talk_idle_03"] = "Maybe today we move nothing? No? Fine.",
+        
         ["fullingporter_talk_idle_04"] = "Coins to Haldor. Work to me. Very fair.",
-        ["fullingporter_talk_idle_05"] = "Fuling smart. Viking... builds more chests.",
+        
         ["fullingporter_talk_idle_06"] = "I have seen berserkers carry less.",
         ["fullingporter_talk_idle_07"] = "Work exists. Vacation does not.",
+        ["fullingporter_talk_idle_08"] = "That\'s how it goes, doggy.",
         ["fullingporter_talk_work_01"] = "Work again!?",
         ["fullingporter_talk_work_02"] = "Ten stacks! I have two hands!",
         ["fullingporter_talk_work_03"] = "I am porter, not portal!",
-        ["fullingporter_talk_work_04"] = "More wood? Did you finish the forest?",
-        ["fullingporter_talk_work_05"] = "You put it in chest. I put it in another chest. Civilization!",
-        ["fullingporter_talk_work_06"] = "Walk there. Carry this. Walk back. Great career.",
-        ["fullingporter_talk_work_07"] = "Next contract, I negotiate breaks.",
-        ["fullingporter_talk_return_01"] = "Done. Now coin?",
-        ["fullingporter_talk_return_02"] = "Back to home. Feet complain.",
-        ["fullingporter_talk_return_03"] = "Cargo delivered. Glory minimal.",
+        ["fullingporter_talk_work_08"] = "Help me...",
+        ["fullingporter_talk_work_04"] = "More wood? Did the forest happen to run out?",
+        ["fullingporter_talk_work_05"] = "You put it in chest. I put it in another.",
+        ["fullingporter_talk_work_06"] = "Walk there. Carry this. Walk back...",
+        
+        ["fullingporter_talk_return_01"] = "Done!",
+        
+        ["fullingporter_talk_return_03"] = "Cargo delivered. Please leave five stars.",
         ["fullingporter_talk_return_04"] = "I survived another chest.",
         ["fullingporter_talk_return_05"] = "Finished! Pretending to be busy now.",
         ["fullingporter_talk_blocked_01"] = "Chest full! I am not magic!",
         ["fullingporter_talk_blocked_02"] = "Where put it!? On your head?",
         ["fullingporter_talk_blocked_03"] = "No room. Build chest. Big chest.",
-        ["fullingporter_talk_blocked_04"] = "If storage is full, that is not porter problem!",
-        ["fullingporter_talk_blocked_05"] = "Smart Storage very smart. Still full.",
-        ["fullingporter_talk_blocked_06"] = "I can carry it forever. You pay by hour?"
+        
+        
+        ["fullingporter_talk_blocked_06"] = "What do you want? Can\'t you see? Five-minute break!"
     };
 
     private static readonly Dictionary<string, string> Russian = new()
@@ -68,29 +70,31 @@ internal static class LocalizationRegistry
         ["fullingporter_dismiss_confirm"] = "Нажмите клавишу увольнения ещё раз в течение 3 секунд, чтобы расторгнуть контракт",
         ["fullingporter_talk_idle_01"] = "Наконец-то нет работы!",
         ["fullingporter_talk_idle_02"] = "Грузчик носит. Викинг смотрит.",
-        ["fullingporter_talk_idle_03"] = "Может сегодня ничего не переносить? Нет? Ладно.",
+        
         ["fullingporter_talk_idle_04"] = "Монеты Хальдору. Работа мне. Очень честно.",
-        ["fullingporter_talk_idle_05"] = "Фулинг умный. Викинг... строит ещё сундуки.",
+        
         ["fullingporter_talk_idle_06"] = "Я видел берсерков. Они меньше таскают.",
         ["fullingporter_talk_idle_07"] = "Работа есть. Отпуска нет.",
+        ["fullingporter_talk_idle_08"] = "Вот такие дела, собачка.",
         ["fullingporter_talk_work_01"] = "Опять работать!?",
         ["fullingporter_talk_work_02"] = "Десять стопок! У меня две руки!",
         ["fullingporter_talk_work_03"] = "Я грузчик, не портал!",
-        ["fullingporter_talk_work_04"] = "Ещё дерево? У вас лес закончился?",
-        ["fullingporter_talk_work_05"] = "Ты кладёшь в сундук. Я кладу в другой. Цивилизация!",
-        ["fullingporter_talk_work_06"] = "Иди туда. Неси это. Иди назад. Отличная карьера.",
-        ["fullingporter_talk_work_07"] = "В следующем контракте выбью себе перерывы.",
-        ["fullingporter_talk_return_01"] = "Готово. Теперь монета?",
-        ["fullingporter_talk_return_02"] = "Домой. Ноги жалуются.",
-        ["fullingporter_talk_return_03"] = "Груз доставлен. Славы мало.",
+        ["fullingporter_talk_work_08"] = "Помогите...",
+        ["fullingporter_talk_work_04"] = "Ещё дерево? У вас лес случайно не закончился?",
+        ["fullingporter_talk_work_05"] = "Ты кладёшь в сундук. Я кладу в другой.",
+        ["fullingporter_talk_work_06"] = "Иди туда. Неси это. Иди назад...",
+        
+        ["fullingporter_talk_return_01"] = "Готово!",
+        
+        ["fullingporter_talk_return_03"] = "Груз доставлен. Поставьте пять звезд.",
         ["fullingporter_talk_return_04"] = "Я пережил ещё один сундук.",
         ["fullingporter_talk_return_05"] = "Закончил! Теперь делаю вид, что занят.",
         ["fullingporter_talk_blocked_01"] = "Сундук полный! Я не маг!",
         ["fullingporter_talk_blocked_02"] = "Куда класть!? На голову тебе?",
         ["fullingporter_talk_blocked_03"] = "Места нет. Строй сундук. Большой сундук.",
-        ["fullingporter_talk_blocked_04"] = "Если склад полный — это не проблема грузчика!",
-        ["fullingporter_talk_blocked_05"] = "Smart Storage очень умный. Но всё равно полный.",
-        ["fullingporter_talk_blocked_06"] = "Я могу носить это вечно. Оплата почасовая?"
+        
+        
+        ["fullingporter_talk_blocked_06"] = "Чего тебе? Не видишь? Перерыв пять минут!"
     };
 
     internal static void Register()
