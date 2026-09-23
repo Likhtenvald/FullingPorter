@@ -441,8 +441,15 @@ internal sealed class PorterWorker : MonoBehaviour
     private void FinishBatch()
     {
         ClearBatch();
+
+        if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
+        {
+            _state = WorkState.ReturningHome;
+            return;
+        }
+
         _state = WorkState.Idle;
-        _nextScan = 0f;
+        _nextScan = Time.time + ScanInterval;
     }
 
     private void AbortBatch()
