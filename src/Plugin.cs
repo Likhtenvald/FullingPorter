@@ -24,6 +24,7 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<int> MaxStacksPerTrip;
     internal static ConfigEntry<bool> PorterCanDie;
     internal static ConfigEntry<KeyCode> DismissKey;
+    internal static ConfigEntry<KeyCode> SourceChestKey;
 
     private Harmony _harmony;
 
@@ -35,6 +36,7 @@ public sealed class Plugin : BaseUnityPlugin
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 4, "Maximum distinct stacks carried per trip.");
         PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
         DismissKey = Config.Bind("Porter", "DismissKey", KeyCode.Delete, "Key used while looking at a porter to dismiss it. Press twice to confirm.");
+        SourceChestKey = Config.Bind("Porter", "SourceChestKey", KeyCode.Home, "Key used while looking at a container to toggle it as a porter source.");
 
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
