@@ -185,8 +185,8 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         // Inventory and ZDO changes are intentionally rate-limited. Without this,
-        // a 12-stack batch can generate a burst of container/network updates over
-        // only a handful of rendered frames.
+        // a larger configured batch can generate a burst of container/network
+        // updates over only a handful of rendered frames.
         if (Time.time < _nextTransferTime)
             return;
 
