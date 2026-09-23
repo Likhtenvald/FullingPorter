@@ -291,6 +291,7 @@ internal sealed class PorterWorker : MonoBehaviour
         // every candidate item.
         var containers = Object.FindObjectsByType<Container>(FindObjectsSortMode.None);
         var acceptedIds = new Dictionary<Container, HashSet<string>>();
+        var planningInventories = new Dictionary<Container, Inventory>();
 
         var sources = new List<Container>();
         foreach (var candidateSource in containers)
@@ -311,7 +312,13 @@ internal sealed class PorterWorker : MonoBehaviour
 
             foreach (var candidateItem in items)
             {
-                var target = FindDestination(candidateItem, candidateSource, radiusSqr, containers, acceptedIds);
+                var target = FindDestination(
+                    candidateItem,
+                    candidateSource,
+                    radiusSqr,
+                    containers,
+                    acceptedIds,
+                    planningInventories);
                 if (target == null) continue;
 
                 _cargo.Add(new CargoEntry
@@ -338,7 +345,8 @@ internal sealed class PorterWorker : MonoBehaviour
         Container source,
         float radiusSqr,
         Container[] containers,
-        Dictionary<Container, HashSet<string>> acceptedIds)
+        Dictionary<Container, HashSet<string>> acceptedIds,
+        Dictionary<Container, Inventory> planningInventories)
     {
         if (item?.m_dropPrefab == null) return null;
 
@@ -360,9 +368,9 @@ internal sealed class PorterWorker : MonoBehaviour
             if (!accepted.Contains(itemId)) continue;
             if (IsDestinationCoolingDown(container, itemId)) continue;
 
-            var inventory = container.GetInventory();
-            if (inventory == null) continue;
-            if (!inventory.CanAddItem(item, -1))
+            var planningInventory = GetPlanningInventory(container, planningInventories);
+            if (planningInventory == null) continue;
+            if (!planningInventory.CanAddItem(item, -1))
             {
                 SetDestinationCooldown(container, item);
                 continue;
@@ -376,7 +384,66 @@ internal sealed class PorterWorker : MonoBehaviour
             }
         }
 
+        if (best == null)
+            return null;
+
+        var reservedInventory = GetPlanningInventory(best, planningInventories);
+        if (reservedInventory == null)
+            return null;
+
+        var reservation = item.Clone();
+        reservation.m_stack = item.m_stack;
+        reservation.m_equipped = false;
+
+        if (!reservedInventory.AddItem(reservation))
+        {
+            Plugin.Log.LogDebug(
+                $"Porter could not reserve planned capacity for {DescribeItem(item)} in {best.name}.");
+            return null;
+        }
+
         return best;
+    }
+
+    private static Inventory GetPlanningInventory(
+        Container container,
+        Dictionary<Container, Inventory> planningInventories)
+    {
+        if (container == null)
+            return null;
+
+        if (planningInventories.TryGetValue(container, out var existing))
+            return existing;
+
+        var sourceInventory = container.GetInventory();
+        if (sourceInventory == null)
+            return null;
+
+        var planning = new Inventory(
+            "FullingPorter_Planning",
+            null,
+            sourceInventory.GetWidth(),
+            sourceInventory.GetHeight());
+
+        foreach (var existingItem in sourceInventory.GetAllItems())
+        {
+            if (existingItem == null)
+                continue;
+
+            var clone = existingItem.Clone();
+            clone.m_stack = existingItem.m_stack;
+            clone.m_equipped = false;
+
+            if (!planning.AddItem(clone))
+            {
+                Plugin.Log.LogDebug(
+                    $"Porter could not mirror inventory for planning: {container.name}.");
+                return null;
+            }
+        }
+
+        planningInventories[container] = planning;
+        return planning;
     }
 
     internal DialogueContext GetDialogueContext()
