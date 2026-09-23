@@ -33,7 +33,7 @@ internal static class LocalizationRegistry
     {
         LocalizationManager.Instance.AddLocalization("English", English);
         LocalizationManager.Instance.AddLocalization("Russian", Russian);
-        LocalizationManager.Instance.AddLocalization("Русский", Russian);
-        Plugin.Log.LogInfo("FullingPorter localization registered through Jotunn AddLocalization(language, dictionary).");
+        LocalizationManager.Instance.AddLocalization("russian", Russian);
+        Plugin.Log.LogInfo($"FullingPorter localization registered. Player language: {LocalizationManager.Instance.GetPlayerLanguage()}");
     }
 }
