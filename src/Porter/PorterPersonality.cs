@@ -91,19 +91,14 @@ internal sealed class PorterPersonality : MonoBehaviour
         var speakerName = _state != null ? _state.PorterName : "$fullingporter_name";
         speakerName = LocalizationManager.Instance.TryTranslate(speakerName);
 
-        var speaker = new UserInfo
-        {
-            Name = speakerName
-        };
-
-        var bubblePosition = transform.position + Vector3.up * 1.8f;
-        Chat.instance.OnNewChatMessage(
+        Chat.instance.SetNpcText(
             gameObject,
-            0L,
-            bubblePosition,
-            Talker.Type.Normal,
-            speaker,
-            text);
+            Vector3.up * 1.8f,
+            20f,
+            4f,
+            speakerName,
+            text,
+            false);
     }
 
     private string PickLine()
