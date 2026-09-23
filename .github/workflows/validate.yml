@@ -1,0 +1,19 @@
+name: Build validation
+on:
+  pull_request:
+  push:
+    branches: [develop]
+jobs:
+  source-sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required project files
+        run: |
+          test -f FullingPorter.csproj
+          test -f manifest.json
+          test -f src/Plugin.cs
+          test -f src/Porter/PorterWorker.cs
+          test -f src/Storage/QuickStackPlusBridge.cs
+      - name: Note
+        run: echo "Full compile requires Valheim/BepInEx/Jotunn assemblies and is performed in the local playtest environment."
