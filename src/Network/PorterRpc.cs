@@ -178,9 +178,9 @@ internal static class PorterRpc
         pkg.Write(line);
         pkg.Write(voiceIndex);
 
-        // m_peers contains remote clients only. The listen-server host has
+        // GetPeers() returns remote clients only. The listen-server host has
         // already rendered its own bubble and voice in TrySpeakServer.
-        _rpc.SendPackage(ZNet.instance.m_peers, pkg);
+        _rpc.SendPackage(ZNet.instance.GetPeers(), pkg);
     }
 
     private static long GetServerPeerId()
