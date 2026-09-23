@@ -33,7 +33,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private void Update()
     {
         if (_view == null || !_view.IsValid() || !_view.IsOwner()) return;
-        if (_ai != null && _ai.GetTargetCreature() != null) _ai.SetTarget(null);
+
 
         switch (_state)
         {
@@ -84,7 +84,7 @@ internal sealed class PorterWorker : MonoBehaviour
         source = null; destination = null; item = null;
         var radius = Plugin.WorkRadius.Value;
 
-        foreach (var candidateSource in Container.GetAllContainers())
+        foreach (var candidateSource in Object.FindObjectsOfType<Container>())
         {
             if (!IsUsable(candidateSource) || !SourceContainerMarker.IsSource(candidateSource)) continue;
             if (Vector3.Distance(_home, candidateSource.transform.position) > radius) continue;
@@ -107,7 +107,7 @@ internal sealed class PorterWorker : MonoBehaviour
     {
         Container best = null;
         var bestDistance = float.MaxValue;
-        foreach (var container in Container.GetAllContainers())
+        foreach (var container in Object.FindObjectsOfType<Container>())
         {
             if (!IsUsable(container) || container == source || SourceContainerMarker.IsSource(container)) continue;
             if (Vector3.Distance(_home, container.transform.position) > radius) continue;
@@ -123,8 +123,12 @@ internal sealed class PorterWorker : MonoBehaviour
     private bool MoveTowards(Vector3 point)
     {
         if (Vector3.Distance(transform.position, point) <= InteractionDistance) return true;
-        if (_ai == null) return false;
-        _ai.MoveTo(0.1f, point, InteractionDistance, false);
+        var speed = _character != null ? 2.5f : 2f;
+        transform.position = Vector3.MoveTowards(transform.position, point, speed * Time.deltaTime);
+        var direction = point - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), 8f * Time.deltaTime);
         return false;
     }
 
