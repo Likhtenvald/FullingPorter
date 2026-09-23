@@ -3,6 +3,7 @@ param(
     [string]$ThunderstoreProfile = $env:THUNDERSTORE_PROFILE,
     [switch]$InspectTrader,
     [switch]$InspectJotunn,
+    [switch]$InspectLanguages,
     [switch]$NoInstall,
     [switch]$ShowLog
 )
@@ -55,6 +56,44 @@ Write-Host "Repo:         $repoRoot"
 Write-Host "Valheim:      $ValheimDir"
 Write-Host "Thunderstore: $ThunderstoreProfile"
 Write-Host ""
+
+if ($InspectLanguages) {
+    $managedDir = Join-Path $ValheimDir "valheim_Data\Managed"
+    $pluginsDir = Join-Path $ThunderstoreProfile "BepInEx\plugins"
+    $resolveHandler = [System.ResolveEventHandler]{
+        param($sender, $args)
+        $name = ([System.Reflection.AssemblyName]$args.Name).Name + ".dll"
+        $candidate = Get-ChildItem @($managedDir, $pluginsDir) -Recurse -Filter $name -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+        if ($candidate) { return [System.Reflection.Assembly]::LoadFrom($candidate) }
+        return $null
+    }
+    [AppDomain]::CurrentDomain.add_AssemblyResolve($resolveHandler)
+    try {
+        $jotunnDll = Get-ChildItem $pluginsDir -Recurse -Filter "Jotunn.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        if (!$jotunnDll) { throw "Jotunn.dll not found." }
+        $asm = [Reflection.Assembly]::LoadFrom($jotunnDll)
+        $type = $asm.GetType("Jotunn.Managers.LocalizationManager")
+        $instanceProp = $type.GetProperty("Instance", [Reflection.BindingFlags]"Public,NonPublic,Static")
+        $instance = $instanceProp.GetValue($null, $null)
+        Write-Host "LocalizationManager properties/fields related to language:"
+        $type.GetProperties([Reflection.BindingFlags]"Public,NonPublic,Instance,Static") |
+            Where-Object { $_.Name -match "Lang|Local" } |
+            ForEach-Object { Write-Host "  PROPERTY $($_.Name) : $($_.PropertyType.FullName)" }
+        $type.GetFields([Reflection.BindingFlags]"Public,NonPublic,Instance,Static") |
+            Where-Object { $_.Name -match "Lang|Local" } |
+            ForEach-Object { Write-Host "  FIELD    $($_.Name) : $($_.FieldType.FullName)" }
+        Write-Host ""
+        Write-Host "LocalizationManager language-related methods:"
+        $type.GetMethods([Reflection.BindingFlags]"Public,NonPublic,Instance,Static") |
+            Where-Object { $_.Name -match "Lang|Local" } |
+            ForEach-Object { Write-Host "  $($_.Name)" }
+    }
+    finally {
+        [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolveHandler)
+    }
+    exit 0
+}
 
 if ($InspectJotunn) {
     $managedDir = Join-Path $ValheimDir "valheim_Data\Managed"
@@ -137,5 +176,6 @@ Write-Host "Ready. Launch Valheim Modded from Thunderstore for runtime testing."
 Write-Host "Useful commands:"
 Write-Host "  .\scripts\dev.ps1 -InspectTrader"
 Write-Host "  .\scripts\dev.ps1 -InspectJotunn"
+Write-Host "  .\scripts\dev.ps1 -InspectLanguages"
 Write-Host "  .\scripts\dev.ps1 -ShowLog"
 Write-Host "  .\scripts\dev.ps1 -NoInstall"
