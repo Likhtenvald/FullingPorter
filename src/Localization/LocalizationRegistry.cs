@@ -1,5 +1,5 @@
+using Jotunn.Managers;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace FullingPorter.Localization;
 
@@ -31,15 +31,13 @@ internal static class LocalizationRegistry
 
     internal static void Register()
     {
-        // Localization APIs have changed between Jotunn releases. Register through
-        // Valheim's Localization.AddWord at runtime to keep this build compatible.
-        var localization = global::Localization.instance;
-        if (localization == null) return;
-        var addWord = typeof(global::Localization).GetMethod("AddWord", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        if (addWord == null) return;
+        RegisterLanguage("English", English);
+        RegisterLanguage("Russian", Russian);
+    }
 
-        var language = localization.GetSelectedLanguage();
-        var words = language == "Russian" ? Russian : English;
-        foreach (var pair in words) addWord.Invoke(localization, new object[] { pair.Key, pair.Value });
+    private static void RegisterLanguage(string language, Dictionary<string, string> words)
+    {
+        foreach (var pair in words)
+            LocalizationManager.Instance.AddToken(language, pair.Key, pair.Value);
     }
 }
