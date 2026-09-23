@@ -1,3 +1,4 @@
+using FullingPorter.Network;
 using UnityEngine;
 
 namespace FullingPorter.Porter;
@@ -19,16 +20,28 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
     private void Update()
     {
         var player = Player.m_localPlayer;
-        if (player == null || Plugin.DismissKey == null || !Input.GetKeyDown(Plugin.DismissKey.Value))
+        if (player == null)
+            return;
+
+        var dismissPressed = Plugin.DismissKey != null && Input.GetKeyDown(Plugin.DismissKey.Value);
+        var renamePressed = Plugin.RenameKey != null && Input.GetKeyDown(Plugin.RenameKey.Value);
+        if (!dismissPressed && !renamePressed)
             return;
 
         var hover = player.GetHoverObject();
         if (hover == null || hover.GetComponentInParent<PorterInteraction>() != this)
             return;
 
+        if (renamePressed)
+        {
+            RequestRename();
+            return;
+        }
+
         if (Time.time <= _dismissConfirmUntil)
         {
-            Dismiss(player);
+            PorterRpc.RequestDismiss(_view);
+            _dismissConfirmUntil = 0f;
             return;
         }
 
@@ -38,23 +51,17 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
 
     public bool Interact(Humanoid character, bool hold, bool alt)
     {
-        if (hold || character != Player.m_localPlayer) return false;
+        if (hold || character != Player.m_localPlayer)
+            return false;
 
-        TextInput.instance.RequestText(this, "$fullingporter_rename_title", 24);
+        RequestRename();
         return true;
     }
 
-    private void Dismiss(Humanoid character)
+    private void RequestRename()
     {
-        if (_view == null || !_view.IsValid() || ZNetScene.instance == null)
-            return;
-
-        if (!_view.IsOwner())
-            _view.ClaimOwnership();
-
-        PorterState.ClearWorldOccupied();
-        character.Message(MessageHud.MessageType.Center, "$fullingporter_dismissed");
-        ZNetScene.instance.Destroy(gameObject);
+        if (TextInput.instance != null)
+            TextInput.instance.RequestText(this, "$fullingporter_rename_title", 24);
     }
 
     public bool UseItem(Humanoid user, ItemDrop.ItemData item) => false;
@@ -62,6 +69,6 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
 
     public void SetText(string text)
     {
-        if (_state != null) _state.PorterName = text;
+        PorterRpc.RequestRename(_view, text);
     }
 }
