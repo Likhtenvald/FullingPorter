@@ -3,7 +3,7 @@ using HarmonyLib;
 
 namespace FullingPorter.Patches;
 
-[HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.ShowHud))]
+[HarmonyPatch(typeof(EnemyHud), "ShowHud")]
 internal static class PorterEnemyHudPatch
 {
     private static bool Prefix(Character c)
