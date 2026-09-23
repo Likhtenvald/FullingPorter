@@ -16,6 +16,7 @@ internal static class TransferService
         SourceUnavailable,
         DestinationRejected,
         DestinationFull,
+        ContainerBusy,
         Failed
     }
 
@@ -24,44 +25,79 @@ internal static class TransferService
         if (!source || !destination || item == null || source == destination) return TransferResult.Failed;
         if (ZNet.instance == null || !ZNet.instance.IsServer()) return TransferResult.Failed;
 
+        if (ContainerUseGuard.IsPlayerBusy(source) || ContainerUseGuard.IsPlayerBusy(destination))
+            return TransferResult.ContainerBusy;
+
         var sourceView = source.GetComponent<ZNetView>();
         var destinationView = destination.GetComponent<ZNetView>();
         if (sourceView == null || destinationView == null || !sourceView.IsValid() || !destinationView.IsValid())
             return TransferResult.Failed;
 
-        if (!sourceView.IsOwner()) sourceView.ClaimOwnership();
-        if (!destinationView.IsOwner()) destinationView.ClaimOwnership();
-        if (!sourceView.IsOwner() || !destinationView.IsOwner())
+        var sourceNewLock = false;
+        var destinationNewLock = false;
+
+        if (!ContainerUseGuard.TryAcquire(source, out sourceNewLock))
+            return TransferResult.ContainerBusy;
+
+        if (!ContainerUseGuard.TryAcquire(destination, out destinationNewLock))
+        {
+            ContainerUseGuard.Release(source);
+            return TransferResult.ContainerBusy;
+        }
+
+        // First pass only publishes the porter lock. Inventory mutation is
+        // deliberately delayed until a later tick so clients can observe the
+        // lock before the server can claim ownership and modify either chest.
+        if (sourceNewLock || destinationNewLock)
             return TransferResult.WaitingForOwnership;
 
-        var sourceInventory = source.GetInventory();
-        var destinationInventory = destination.GetInventory();
-        if (sourceInventory == null || destinationInventory == null) return TransferResult.Failed;
-        if (!sourceInventory.ContainsItem(item)) return TransferResult.SourceUnavailable;
-        if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.DestinationRejected;
-        if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.DestinationFull;
-
-        // Never pass the source ItemData instance directly into another
-        // inventory. Valheim may partially merge the supplied object even when
-        // AddItem ultimately returns false. Work on a clone and rollback the
-        // destination if the operation does not fully succeed.
-        using (var destinationSnapshot = new InventorySnapshot(destinationInventory))
+        try
         {
-            var moved = item.Clone();
-            moved.m_stack = item.m_stack;
-            moved.m_equipped = false;
+            if (ContainerUseGuard.IsPlayerBusy(source) || ContainerUseGuard.IsPlayerBusy(destination))
+                return TransferResult.ContainerBusy;
 
-            if (!destinationInventory.AddItem(moved))
-                return TransferResult.Failed;
+            if (!sourceView.IsOwner()) sourceView.ClaimOwnership();
+            if (!destinationView.IsOwner()) destinationView.ClaimOwnership();
+            if (!sourceView.IsOwner() || !destinationView.IsOwner())
+                return TransferResult.WaitingForOwnership;
 
-            // The source item has not been mutated. Remove it only after the
-            // destination accepted the complete cloned stack. If removal fails,
-            // disposing the snapshot rolls the destination back as well.
-            if (!sourceInventory.RemoveItem(item))
-                return TransferResult.SourceUnavailable;
+            if (ContainerUseGuard.IsPlayerBusy(source) || ContainerUseGuard.IsPlayerBusy(destination))
+                return TransferResult.ContainerBusy;
 
-            destinationSnapshot.Commit();
-            return TransferResult.Success;
+            var sourceInventory = source.GetInventory();
+            var destinationInventory = destination.GetInventory();
+            if (sourceInventory == null || destinationInventory == null) return TransferResult.Failed;
+            if (!sourceInventory.ContainsItem(item)) return TransferResult.SourceUnavailable;
+            if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.DestinationRejected;
+            if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.DestinationFull;
+
+            // Never pass the source ItemData instance directly into another
+            // inventory. Valheim may partially merge the supplied object even when
+            // AddItem ultimately returns false. Work on a clone and rollback the
+            // destination if the operation does not fully succeed.
+            using (var destinationSnapshot = new InventorySnapshot(destinationInventory))
+            {
+                var moved = item.Clone();
+                moved.m_stack = item.m_stack;
+                moved.m_equipped = false;
+
+                if (!destinationInventory.AddItem(moved))
+                    return TransferResult.Failed;
+
+                // The source item has not been mutated. Remove it only after the
+                // destination accepted the complete cloned stack. If removal fails,
+                // disposing the snapshot rolls the destination back as well.
+                if (!sourceInventory.RemoveItem(item))
+                    return TransferResult.SourceUnavailable;
+
+                destinationSnapshot.Commit();
+                return TransferResult.Success;
+            }
+        }
+        finally
+        {
+            ContainerUseGuard.Release(destination);
+            ContainerUseGuard.Release(source);
         }
     }
 
