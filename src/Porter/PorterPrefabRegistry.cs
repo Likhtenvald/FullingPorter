@@ -17,18 +17,17 @@ internal static class PorterPrefabRegistry
             return;
         }
 
-        // Do not Instantiate the networked creature prefab here. Instantiating a
-        // vanilla ZNetView prefab outside ZNetScene spawning runs Awake immediately
-        // without a valid ZDO and leaves Character/AI components half initialized.
-        // Jotunn clones the source safely while registering the custom prefab.
-        var custom = new CustomPrefab(PrefabName, "Goblin", true);
-        var prefab = custom.Prefab;
+        // Clone through Jotunn's prefab manager. It temporarily deactivates the
+        // source before Unity cloning, preventing network/AI Awake methods from
+        // running against an unregistered prefab.
+        var prefab = PrefabManager.Instance.CreateClonedPrefab(PrefabName, source);
         if (prefab == null)
         {
-            Plugin.Log.LogError("Could not create the porter prefab from vanilla Goblin.");
+            Plugin.Log.LogError("Could not clone the porter prefab from vanilla Goblin.");
             return;
         }
 
+        var custom = new CustomPrefab(prefab, true);
         prefab.AddComponent<PorterState>();
         prefab.AddComponent<PorterWorker>();
         prefab.AddComponent<PorterInteraction>();
