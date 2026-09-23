@@ -30,6 +30,8 @@ internal sealed class PorterWorker : MonoBehaviour
     private float _nextTransferTime;
     private bool _homeInitialized;
     private int _activeTripCapacity;
+    private ItemDrop.ItemData _ownershipWaitItem;
+    private float _ownershipWaitSince;
 
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
@@ -38,6 +40,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private const float ProgressDistance = 0.25f;
     private const float TransferInterval = 0.12f;
     private const float DestinationRetryCooldown = 8f;
+    private const float OwnershipWaitTimeout = 3f;
 
     private void Awake()
     {
@@ -131,10 +134,12 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (_cargo.Count == 0)
         {
+            Plugin.Log.LogDebug("Porter trip has no valid cargo after source revalidation.");
             FinishBatch();
             return;
         }
 
+        Plugin.Log.LogDebug($"Porter collected {_cargo.Count} stack(s) from source and is heading to destination.");
         _state = WorkState.ToDestination;
     }
 
@@ -183,22 +188,49 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (transferResult == TransferService.TransferResult.WaitingForOwnership)
         {
-            // ClaimOwnership may complete on a later network tick. Stay at the
-            // destination and retry instead of dropping this stack from the batch.
+            if (_ownershipWaitItem != entry.Item)
+            {
+                _ownershipWaitItem = entry.Item;
+                _ownershipWaitSince = Time.time;
+                Plugin.Log.LogDebug($"Porter waiting for container ownership for {DescribeItem(entry.Item)}.");
+                return;
+            }
+
+            if (Time.time - _ownershipWaitSince < OwnershipWaitTimeout)
+                return;
+
+            Plugin.Log.LogWarning($"Porter ownership wait timed out for {DescribeItem(entry.Item)}; skipping this stack.");
+            ResetOwnershipWait();
+            _cargo.RemoveAt(index);
+            if (_cargo.Count == 0) FinishBatch();
             return;
         }
+
+        ResetOwnershipWait();
 
         if (transferResult == TransferService.TransferResult.Success)
         {
             ClearDestinationCooldown(entry.Destination, entry.Item);
-            Plugin.Log.LogDebug($"Porter moved {entry.Item.m_shared.m_name}.");
+            Plugin.Log.LogDebug($"Porter moved {DescribeItem(entry.Item)} successfully.");
+        }
+        else if (transferResult == TransferService.TransferResult.DestinationFull)
+        {
+            SetDestinationCooldown(entry.Destination, entry.Item);
+            Plugin.Log.LogDebug($"Porter destination is full for {DescribeItem(entry.Item)}; cooldown started.");
+        }
+        else if (transferResult == TransferService.TransferResult.DestinationRejected)
+        {
+            Plugin.Log.LogDebug($"Porter destination no longer accepts {DescribeItem(entry.Item)}.");
+        }
+        else if (transferResult == TransferService.TransferResult.SourceUnavailable)
+        {
+            Plugin.Log.LogDebug($"Porter source no longer contains {DescribeItem(entry.Item)}.");
         }
         else
         {
-            SetDestinationCooldown(entry.Destination, entry.Item);
+            Plugin.Log.LogDebug($"Porter transfer failed for {DescribeItem(entry.Item)} without destination cooldown.");
         }
 
-        // A real validation/space failure is reconsidered during a later scan.
         _cargo.RemoveAt(index);
 
         if (_cargo.Count == 0)
@@ -256,6 +288,7 @@ internal sealed class PorterWorker : MonoBehaviour
             if (_cargo.Count == 0) continue;
 
             _source = candidateSource;
+            Plugin.Log.LogDebug($"Porter planned trip with {_cargo.Count}/{maxStacks} stack(s) from {candidateSource.name}.");
             return true;
         }
 
@@ -454,6 +487,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void FinishBatch()
     {
+        Plugin.Log.LogDebug("Porter trip complete; returning home.");
         ClearBatch();
 
         if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
@@ -472,6 +506,19 @@ internal sealed class PorterWorker : MonoBehaviour
         _state = WorkState.ReturningHome;
     }
 
+    private static string DescribeItem(ItemDrop.ItemData item)
+    {
+        if (item == null) return "<null item>";
+        var name = item.m_dropPrefab != null ? item.m_dropPrefab.name : item.m_shared?.m_name ?? "<unknown>";
+        return $"{name} x{item.m_stack}";
+    }
+
+    private void ResetOwnershipWait()
+    {
+        _ownershipWaitItem = null;
+        _ownershipWaitSince = 0f;
+    }
+
     private void ClearBatch()
     {
         _ai?.Halt();
@@ -480,5 +527,6 @@ internal sealed class PorterWorker : MonoBehaviour
         _cargo.Clear();
         _nextTransferTime = 0f;
         _activeTripCapacity = 0;
+        ResetOwnershipWait();
     }
 }
