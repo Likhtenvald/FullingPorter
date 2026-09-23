@@ -72,7 +72,7 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         if (_serverActive != null)
             return true;
 
-        foreach (var porter in Object.FindObjectsOfType<PorterState>())
+        foreach (var porter in Object.FindObjectsByType<PorterState>(FindObjectsSortMode.None))
         {
             if (porter == null) continue;
 
