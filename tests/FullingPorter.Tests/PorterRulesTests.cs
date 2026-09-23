@@ -89,4 +89,48 @@ public sealed class PorterRulesTests
     {
         Assert.Equal(expected, PorterRules.ShouldRetryTransfer(failures, maxFailures));
     }
+
+    [Theory]
+    [InlineData(0f, 0f, 0f, 3f, 0f, 4f, true)]
+    [InlineData(0f, 0f, 0f, 5f, 0f, 0f, true)]
+    [InlineData(0f, 0f, 0f, 5.01f, 0f, 0f, false)]
+    public void ServerInteractionDistanceIsBounded(
+        float senderX,
+        float senderY,
+        float senderZ,
+        float targetX,
+        float targetY,
+        float targetZ,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            PorterServerRequestRules.IsWithinInteractionDistance(
+                senderX,
+                senderY,
+                senderZ,
+                targetX,
+                targetY,
+                targetZ));
+    }
+
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("Porter", true)]
+    [InlineData("123456789012345678901234", true)]
+    [InlineData("1234567890123456789012345", false)]
+    public void ServerRenamePayloadHasHardLengthLimit(string name, bool expected)
+    {
+        Assert.Equal(expected, PorterServerRequestRules.IsRenamePayloadValid(name));
+    }
+
+    [Theory]
+    [InlineData(10f, -1f, true)]
+    [InlineData(10f, 9.8f, true)]
+    [InlineData(10f, 9.9f, false)]
+    public void ServerActionsAreRateLimited(float now, float lastActionAt, bool expected)
+    {
+        Assert.Equal(expected, PorterServerRequestRules.IsActionRateAllowed(now, lastActionAt));
+    }
+
 }
