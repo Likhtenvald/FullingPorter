@@ -90,8 +90,8 @@ internal static class PorterRpc
                 HandleToggleSource(sender, pkg);
                 break;
             case ActionCode.Dismiss:
-                HandleDismiss(sender, pkg);
-                break;
+                yield return HandleDismiss(sender, pkg);
+                yield break;
             case ActionCode.Rename:
                 HandleRename(sender, pkg);
                 break;
@@ -189,7 +189,7 @@ internal static class PorterRpc
         _rpc.SendPackage(sender, response);
     }
 
-    private static void HandleDismiss(long sender, ZPackage pkg)
+    private static IEnumerator HandleDismiss(long sender, ZPackage pkg)
     {
         var target = FindObject(pkg.ReadZDOID());
         var view = target != null ? target.GetComponent<ZNetView>() : null;
@@ -197,15 +197,20 @@ internal static class PorterRpc
         if (view == null || state == null || ZNetScene.instance == null)
         {
             SendResult(sender, ActionCode.Dismiss, false);
-            return;
+            yield break;
+        }
+
+        var deadline = Time.time + 3f;
+        while (!view.IsOwner() && Time.time < deadline)
+        {
+            view.ClaimOwnership();
+            yield return null;
         }
 
         if (!view.IsOwner())
-            view.ClaimOwnership();
-        if (!view.IsOwner())
         {
             SendResult(sender, ActionCode.Dismiss, false);
-            return;
+            yield break;
         }
 
         PorterState.ClearWorldOccupied();
@@ -223,8 +228,8 @@ internal static class PorterRpc
             return;
         }
 
-        state.SetNameServer(pkg.ReadString());
-        SendResult(sender, ActionCode.Rename, true);
+        var success = state.SetNameServer(pkg.ReadString());
+        SendResult(sender, ActionCode.Rename, success);
     }
 
     private static GameObject FindObject(ZDOID id)
