@@ -1,7 +1,9 @@
 using BepInEx;
 using BepInEx.Configuration;
+using HarmonyLib;
 using Jotunn;
 using Jotunn.Managers;
+using FullingPorter.Localization;
 
 namespace FullingPorter;
 
@@ -16,20 +18,33 @@ public sealed class Plugin : BaseUnityPlugin
     public const string PluginVersion = "0.1.0";
     public const string QuickStackPlusGuid = "Goneryx.QuickStackPlus";
 
+    internal static BepInEx.Logging.ManualLogSource Log;
     internal static ConfigEntry<int> ContractPrice;
     internal static ConfigEntry<float> WorkRadius;
     internal static ConfigEntry<int> MaxStacksPerTrip;
     internal static ConfigEntry<bool> PorterCanDie;
 
+    private Harmony _harmony;
+
     private void Awake()
     {
+        Log = Logger;
         ContractPrice = Config.Bind("Contract", "Price", 1500, "Haldor contract price in coins.");
         WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 4, "Maximum distinct stacks carried per trip.");
         PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
 
+        LocalizationRegistry.Register();
+        _harmony = new Harmony(PluginGuid);
+        _harmony.PatchAll();
+
         PrefabManager.OnVanillaPrefabsAvailable += OnVanillaPrefabsAvailable;
         Logger.LogInfo($"{PluginName} {PluginVersion} loaded.");
+    }
+
+    private void OnDestroy()
+    {
+        _harmony?.UnpatchSelf();
     }
 
     private void OnVanillaPrefabsAvailable()
