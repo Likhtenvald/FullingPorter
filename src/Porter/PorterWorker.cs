@@ -22,9 +22,15 @@ internal sealed class PorterWorker : MonoBehaviour
     private readonly List<CargoEntry> _cargo = new();
     private Vector3 _home;
     private float _nextScan;
+    private Vector3 _moveTarget;
+    private Vector3 _lastProgressPosition;
+    private float _lastProgressTime;
+    private bool _trackingMove;
 
-    private const float InteractionDistance = 2.2f;
+    private const float InteractionDistance = 2.5f;
     private const float ScanInterval = 2f;
+    private const float StuckTimeout = 8f;
+    private const float ProgressDistance = 0.25f;
 
     private void Awake()
     {
@@ -71,7 +77,11 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        if (!MoveTowards(_source.transform.position)) return;
+        if (!MoveTowards(_source.transform.position, out var stuckAtSource))
+        {
+            if (stuckAtSource) AbortBatch();
+            return;
+        }
 
         var inventory = _source.GetInventory();
         if (inventory == null)
@@ -126,7 +136,16 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        if (!MoveTowards(entry.Destination.transform.position)) return;
+        if (!MoveTowards(entry.Destination.transform.position, out var stuckAtDestination))
+        {
+            if (stuckAtDestination)
+            {
+                Plugin.Log.LogDebug("Porter could not reach a destination; skipping this stack.");
+                _cargo.RemoveAt(index);
+                if (_cargo.Count == 0) FinishBatch();
+            }
+            return;
+        }
 
         if (TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item))
             Plugin.Log.LogDebug($"Porter moved {entry.Item.m_shared.m_name}.");
@@ -141,8 +160,10 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void TickReturningHome()
     {
-        if (MoveTowards(_home))
+        if (MoveTowards(_home, out var stuckReturningHome) || stuckReturningHome)
         {
+            _ai?.Halt();
+            ResetMoveTracking();
             _state = WorkState.Idle;
             _nextScan = 0f;
         }
@@ -232,22 +253,61 @@ internal sealed class PorterWorker : MonoBehaviour
         return bestIndex;
     }
 
-    private bool MoveTowards(Vector3 point)
+    private bool MoveTowards(Vector3 point, out bool stuck)
     {
-        if (Vector3.Distance(transform.position, point) <= InteractionDistance)
+        stuck = false;
+
+        if (DistanceXZ(transform.position, point) <= InteractionDistance)
         {
             _ai?.Halt();
+            ResetMoveTracking();
             return true;
         }
 
         if (_ai == null)
         {
             Plugin.Log.LogWarning("Porter movement AI is missing.");
+            stuck = true;
+            return false;
+        }
+
+        if (!_trackingMove || DistanceXZ(_moveTarget, point) > 0.5f)
+        {
+            _trackingMove = true;
+            _moveTarget = point;
+            _lastProgressPosition = transform.position;
+            _lastProgressTime = Time.time;
+        }
+        else if (DistanceXZ(_lastProgressPosition, transform.position) >= ProgressDistance)
+        {
+            _lastProgressPosition = transform.position;
+            _lastProgressTime = Time.time;
+        }
+        else if (Time.time - _lastProgressTime >= StuckTimeout)
+        {
+            _ai.Halt();
+            ResetMoveTracking();
+            stuck = true;
             return false;
         }
 
         _ai.WalkTo(point, InteractionDistance);
         return false;
+    }
+
+    private static float DistanceXZ(Vector3 a, Vector3 b)
+    {
+        var dx = a.x - b.x;
+        var dz = a.z - b.z;
+        return Mathf.Sqrt(dx * dx + dz * dz);
+    }
+
+    private void ResetMoveTracking()
+    {
+        _trackingMove = false;
+        _moveTarget = Vector3.zero;
+        _lastProgressPosition = Vector3.zero;
+        _lastProgressTime = 0f;
     }
 
     private static bool IsUsable(Container c)
@@ -273,6 +333,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private void ClearBatch()
     {
         _ai?.Halt();
+        ResetMoveTracking();
         _source = null;
         _cargo.Clear();
     }
