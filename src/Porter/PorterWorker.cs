@@ -376,7 +376,9 @@ internal sealed class PorterWorker : MonoBehaviour
             case WorkState.ToDestination:
                 return DialogueContext.Working;
             case WorkState.ReturningHome:
-                return DialogueContext.Returning;
+                return _returningFromWork
+                    ? DialogueContext.Returning
+                    : DialogueContext.Idle;
             default:
                 return DialogueContext.Idle;
         }
