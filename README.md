@@ -29,3 +29,6 @@ Values are item IDs separated by U+001F. FullingPorter reads this existing data 
 Set `VALHEIM_MANAGED` to Valheim's `valheim_Data/Managed` directory and `BEPINEX_CORE` to `BepInEx/core`, then build the project.
 
 See [docs/DESIGN.md](docs/DESIGN.md) for architecture and milestones.
+
+## Testing
+The first in-game test should only begin after the build gate in [docs/PLAYTEST.md](docs/PLAYTEST.md) passes. Use a disposable world for the initial smoke test.
