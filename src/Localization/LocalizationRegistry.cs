@@ -15,7 +15,7 @@ internal static class LocalizationRegistry
             ["fullingporter_contract_desc"] = "A contract for the services of a surprisingly disciplined Fuling porter.",
             ["fullingporter_source_enabled"] = "Porter source chest assigned",
             ["fullingporter_source_disabled"] = "Porter source chest unassigned",
-            ["fullingporter_spawned"] = "Your Fuling porter has arrived"
+            ["fullingporter_spawned"] = "Your Fuling porter has arrived",\n            ["fullingporter_rename_title"] = "Name your porter"
         });
         LocalizationManager.Instance.AddTranslation("Russian", new Dictionary<string, string>
         {
@@ -25,7 +25,7 @@ internal static class LocalizationRegistry
             ["fullingporter_contract_desc"] = "Контракт на услуги на удивление дисциплинированного фулинга-грузчика.",
             ["fullingporter_source_enabled"] = "Сундук назначен источником грузчика",
             ["fullingporter_source_disabled"] = "Сундук больше не является источником грузчика",
-            ["fullingporter_spawned"] = "Ваш фулинг-грузчик прибыл"
+            ["fullingporter_spawned"] = "Ваш фулинг-грузчик прибыл",\n            ["fullingporter_rename_title"] = "Имя грузчика"
         });
     }
 }
