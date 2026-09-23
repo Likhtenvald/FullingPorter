@@ -35,7 +35,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
     private Container _activeDestination;
-    private float _blockedDialogueUntil;
+    private float _blockedUntil;
 
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
@@ -226,7 +226,6 @@ internal sealed class PorterWorker : MonoBehaviour
         else if (transferResult == TransferService.TransferResult.DestinationFull)
         {
             SetDestinationCooldown(entry.Destination, entry.Item);
-            _blockedDialogueUntil = Time.time + DestinationRetryCooldown;
             Plugin.Log.LogDebug($"Porter destination is full for {DescribeItem(entry.Item)}; cooldown started.");
         }
         else if (transferResult == TransferService.TransferResult.DestinationRejected)
@@ -361,7 +360,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal DialogueContext GetDialogueContext()
     {
-        if (Time.time < _blockedDialogueUntil)
+        if (Time.time < _blockedUntil)
             return DialogueContext.Blocked;
 
         switch (_state)
@@ -378,6 +377,9 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal string GetStatusText()
     {
+        if (Time.time < _blockedUntil)
+            return "$fullingporter_status_blocked";
+
         var capacity = _activeTripCapacity > 0
             ? _activeTripCapacity
             : Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
@@ -421,7 +423,10 @@ internal sealed class PorterWorker : MonoBehaviour
             _destinationCooldowns[container] = items;
         }
 
-        items[itemId] = Time.time + DestinationRetryCooldown;
+        var cooldownUntil = Time.time + DestinationRetryCooldown;
+        items[itemId] = cooldownUntil;
+        if (cooldownUntil > _blockedUntil)
+            _blockedUntil = cooldownUntil;
     }
 
     private void ClearDestinationCooldown(Container container, ItemDrop.ItemData item)
