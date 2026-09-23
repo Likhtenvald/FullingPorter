@@ -22,11 +22,6 @@ internal static class SourceContainerMarker
         if (view == null || !view.IsValid())
             return false;
 
-        if (!view.IsOwner())
-            view.ClaimOwnership();
-        if (!view.IsOwner())
-            return false;
-
         var zdo = view.GetZDO();
         if (zdo == null)
             return false;
