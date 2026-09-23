@@ -4,6 +4,7 @@ using HarmonyLib;
 using Jotunn;
 using Jotunn.Managers;
 using FullingPorter.Localization;
+using UnityEngine;
 
 namespace FullingPorter;
 
@@ -22,6 +23,7 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> WorkRadius;
     internal static ConfigEntry<int> MaxStacksPerTrip;
     internal static ConfigEntry<bool> PorterCanDie;
+    internal static ConfigEntry<KeyCode> DismissKey;
 
     private Harmony _harmony;
 
@@ -32,6 +34,7 @@ public sealed class Plugin : BaseUnityPlugin
         WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 4, "Maximum distinct stacks carried per trip.");
         PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
+        DismissKey = Config.Bind("Porter", "DismissKey", KeyCode.Delete, "Key used while looking at a porter to dismiss it. Press twice to confirm.");
 
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
