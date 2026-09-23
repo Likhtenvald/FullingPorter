@@ -26,11 +26,13 @@ internal sealed class PorterWorker : MonoBehaviour
     private Vector3 _lastProgressPosition;
     private float _lastProgressTime;
     private bool _trackingMove;
+    private float _nextTransferTime;
 
     private const float InteractionDistance = 2.5f;
     private const float ScanInterval = 2f;
     private const float StuckTimeout = 8f;
     private const float ProgressDistance = 0.25f;
+    private const float TransferInterval = 0.12f;
 
     private void Awake()
     {
@@ -160,6 +162,14 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
+        // Inventory and ZDO changes are intentionally rate-limited. Without this,
+        // a 12-stack batch can generate a burst of container/network updates over
+        // only a handful of rendered frames.
+        if (Time.time < _nextTransferTime)
+            return;
+
+        _nextTransferTime = Time.time + TransferInterval;
+
         if (TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item))
             Plugin.Log.LogDebug($"Porter moved {entry.Item.m_shared.m_name}.");
 
@@ -189,7 +199,13 @@ internal sealed class PorterWorker : MonoBehaviour
         var radius = Plugin.WorkRadius.Value;
         var maxStacks = Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
 
-        foreach (var candidateSource in Object.FindObjectsOfType<Container>())
+        // Unity scene-wide searches are relatively expensive. Take one snapshot
+        // for the whole planning pass instead of repeating FindObjectsOfType for
+        // every candidate item.
+        var containers = Object.FindObjectsOfType<Container>();
+        var acceptedIds = new Dictionary<Container, HashSet<string>>();
+
+        foreach (var candidateSource in containers)
         {
             if (!IsUsable(candidateSource) || !SourceContainerMarker.IsSource(candidateSource)) continue;
             if (Vector3.Distance(_home, candidateSource.transform.position) > radius) continue;
@@ -199,7 +215,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
             foreach (var candidateItem in items)
             {
-                var target = FindDestination(candidateItem, candidateSource, radius);
+                var target = FindDestination(candidateItem, candidateSource, radius, containers, acceptedIds);
                 if (target == null) continue;
 
                 _cargo.Add(new CargoEntry
@@ -220,16 +236,31 @@ internal sealed class PorterWorker : MonoBehaviour
         return false;
     }
 
-    private Container FindDestination(ItemDrop.ItemData item, Container source, float radius)
+    private Container FindDestination(
+        ItemDrop.ItemData item,
+        Container source,
+        float radius,
+        Container[] containers,
+        Dictionary<Container, HashSet<string>> acceptedIds)
     {
+        if (item?.m_dropPrefab == null) return null;
+
         Container best = null;
         var bestDistance = float.MaxValue;
+        var itemId = item.m_dropPrefab.name;
 
-        foreach (var container in Object.FindObjectsOfType<Container>())
+        foreach (var container in containers)
         {
             if (!IsUsable(container) || container == source || SourceContainerMarker.IsSource(container)) continue;
             if (Vector3.Distance(_home, container.transform.position) > radius) continue;
-            if (!QuickStackPlusBridge.Accepts(container, item)) continue;
+
+            if (!acceptedIds.TryGetValue(container, out var accepted))
+            {
+                accepted = QuickStackPlusBridge.GetAcceptedItemIds(container);
+                acceptedIds[container] = accepted;
+            }
+
+            if (!accepted.Contains(itemId)) continue;
 
             var inventory = container.GetInventory();
             if (inventory == null || !inventory.CanAddItem(item, -1)) continue;
@@ -349,5 +380,6 @@ internal sealed class PorterWorker : MonoBehaviour
         ResetMoveTracking();
         _source = null;
         _cargo.Clear();
+        _nextTransferTime = 0f;
     }
 }
