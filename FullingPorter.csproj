@@ -11,6 +11,7 @@
     <Reference Include="assembly_valheim"><HintPath>$(VALHEIM_MANAGED)\assembly_valheim.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(VALHEIM_MANAGED)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(VALHEIM_MANAGED)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.AssetBundleModule"><HintPath>$(VALHEIM_MANAGED)\UnityEngine.AssetBundleModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BepInEx"><HintPath>$(BEPINEX_CORE)\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BEPINEX_CORE)\0Harmony.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Jotunn"><HintPath>$(JOTUNN_DLL)</HintPath><Private>false</Private></Reference>
