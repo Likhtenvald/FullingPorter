@@ -57,12 +57,40 @@ internal sealed class PorterPersonality : MonoBehaviour
     private PorterWorker _worker;
     private PorterState _state;
     private float _nextReactionTime;
+    private float _nextAmbientReactionTime;
     private const float ReactionCooldown = 2.5f;
+    private const float AmbientHearDistance = 18f;
+    private const float AmbientMinInterval = 18f;
+    private const float AmbientMaxInterval = 42f;
 
     private void Awake()
     {
         _worker = GetComponent<PorterWorker>();
         _state = GetComponent<PorterState>();
+        ScheduleNextAmbient();
+    }
+
+    private void Update()
+    {
+        if (Time.time < _nextAmbientReactionTime)
+            return;
+
+        var player = Player.m_localPlayer;
+        if (player == null)
+        {
+            ScheduleNextAmbient();
+            return;
+        }
+
+        var distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
+        if (distanceSqr > AmbientHearDistance * AmbientHearDistance)
+        {
+            _nextAmbientReactionTime = Time.time + 5f;
+            return;
+        }
+
+        Speak(player);
+        ScheduleNextAmbient();
     }
 
     internal bool React(Player player)
@@ -71,13 +99,28 @@ internal sealed class PorterPersonality : MonoBehaviour
             return false;
 
         _nextReactionTime = Time.time + ReactionCooldown;
+        Speak(player);
 
+        // A manual interaction should not be followed immediately by ambient
+        // chatter, otherwise E can accidentally produce two lines in a row.
+        if (_nextAmbientReactionTime < Time.time + 8f)
+            _nextAmbientReactionTime = Time.time + 8f;
+
+        return true;
+    }
+
+    private void Speak(Player player)
+    {
         var line = PickLine();
         var localized = LocalizationManager.Instance.TryTranslate(line);
 
         ShowSpeechBubble(player, localized);
         PlayVoice();
-        return true;
+    }
+
+    private void ScheduleNextAmbient()
+    {
+        _nextAmbientReactionTime = Time.time + Random.Range(AmbientMinInterval, AmbientMaxInterval);
     }
 
     private void ShowSpeechBubble(Player player, string text)
