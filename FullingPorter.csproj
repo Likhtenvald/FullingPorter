@@ -8,6 +8,9 @@
     <Version>0.1.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="assembly_valheim"><HintPath>$(VALHEIM_MANAGED)\assembly_valheim.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="assembly_utils"><HintPath>$(VALHEIM_MANAGED)\assembly_utils.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(VALHEIM_MANAGED)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
