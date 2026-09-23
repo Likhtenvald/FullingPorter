@@ -35,7 +35,8 @@ internal sealed class PorterWorker : MonoBehaviour
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
     private Container _activeDestination;
-    private float _blockedUntil;
+    private float _blockedStatusUntil;
+    private float _blockedDialogueUntil;
 
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
@@ -44,6 +45,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private const float ProgressDistance = 0.25f;
     private const float TransferInterval = 0.12f;
     private const float DestinationRetryCooldown = 8f;
+    private const float BlockedDialogueDuration = 20f;
     private const float OwnershipWaitTimeout = 3f;
 
     private void Awake()
@@ -360,7 +362,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal DialogueContext GetDialogueContext()
     {
-        if (Time.time < _blockedUntil)
+        if (Time.time < _blockedDialogueUntil)
             return DialogueContext.Blocked;
 
         switch (_state)
@@ -377,7 +379,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
     internal string GetStatusText()
     {
-        if (Time.time < _blockedUntil)
+        if (Time.time < _blockedStatusUntil)
             return "$fullingporter_status_blocked";
 
         var capacity = _activeTripCapacity > 0
@@ -425,8 +427,13 @@ internal sealed class PorterWorker : MonoBehaviour
 
         var cooldownUntil = Time.time + DestinationRetryCooldown;
         items[itemId] = cooldownUntil;
-        if (cooldownUntil > _blockedUntil)
-            _blockedUntil = cooldownUntil;
+
+        if (cooldownUntil > _blockedStatusUntil)
+            _blockedStatusUntil = cooldownUntil;
+
+        var dialogueUntil = Time.time + BlockedDialogueDuration;
+        if (dialogueUntil > _blockedDialogueUntil)
+            _blockedDialogueUntil = dialogueUntil;
     }
 
     private void ClearDestinationCooldown(Container container, ItemDrop.ItemData item)
