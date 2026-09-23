@@ -30,6 +30,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private bool _homeInitialized;
 
     private const float InteractionDistance = 2.5f;
+    private const float HomeDistance = 0.35f;
     private const float ScanInterval = 2f;
     private const float StuckTimeout = 8f;
     private const float ProgressDistance = 0.25f;
@@ -85,7 +86,7 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        if ((transform.position - _home).sqrMagnitude > InteractionDistance * InteractionDistance)
+        if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
             _state = WorkState.ReturningHome;
     }
 
@@ -97,7 +98,7 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        if (!MoveTowards(_source.transform.position, out var stuckAtSource))
+        if (!MoveTowards(_source.transform.position, InteractionDistance, out var stuckAtSource))
         {
             if (stuckAtSource) AbortBatch();
             return;
@@ -156,7 +157,7 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        if (!MoveTowards(entry.Destination.transform.position, out var stuckAtDestination))
+        if (!MoveTowards(entry.Destination.transform.position, InteractionDistance, out var stuckAtDestination))
         {
             if (stuckAtDestination)
             {
@@ -188,7 +189,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void TickReturningHome()
     {
-        if (MoveTowards(_home, out var stuckReturningHome) || stuckReturningHome)
+        if (MoveTowards(_home, HomeDistance, out var stuckReturningHome) || stuckReturningHome)
         {
             _ai?.Halt();
             ResetMoveTracking();
@@ -303,11 +304,11 @@ internal sealed class PorterWorker : MonoBehaviour
         return bestIndex;
     }
 
-    private bool MoveTowards(Vector3 point, out bool stuck)
+    private bool MoveTowards(Vector3 point, float stopDistance, out bool stuck)
     {
         stuck = false;
 
-        if (DistanceXZ(transform.position, point) <= InteractionDistance)
+        if (DistanceXZ(transform.position, point) <= stopDistance)
         {
             _ai?.Halt();
             ResetMoveTracking();
@@ -341,7 +342,7 @@ internal sealed class PorterWorker : MonoBehaviour
             return false;
         }
 
-        _ai.WalkTo(point, InteractionDistance);
+        _ai.WalkTo(point, stopDistance);
         return false;
     }
 
