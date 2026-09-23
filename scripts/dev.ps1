@@ -2,6 +2,7 @@ param(
     [string]$ValheimDir = $env:VALHEIM_DIR,
     [string]$ThunderstoreProfile = $env:THUNDERSTORE_PROFILE,
     [switch]$InspectTrader,
+    [switch]$InspectJotunn,
     [switch]$NoInstall,
     [switch]$ShowLog
 )
@@ -55,6 +56,25 @@ Write-Host "Valheim:      $ValheimDir"
 Write-Host "Thunderstore: $ThunderstoreProfile"
 Write-Host ""
 
+if ($InspectJotunn) {
+    $jotunnDll = Get-ChildItem (Join-Path $ThunderstoreProfile "BepInEx\plugins") -Recurse -Filter "Jotunn.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    if (!$jotunnDll) { throw "Jotunn.dll not found in Thunderstore profile." }
+    $asm = [Reflection.Assembly]::LoadFrom($jotunnDll)
+    $type = $asm.GetType("Jotunn.Managers.LocalizationManager")
+    if (!$type) { throw "Jotunn.Managers.LocalizationManager not found." }
+    Write-Host "Jotunn: $jotunnDll"
+    Write-Host "Localization-related types:"
+    try { $asm.GetTypes() } catch [Reflection.ReflectionTypeLoadException] { $_.Exception.Types | Where-Object { $_ } } |
+        Where-Object { $_.FullName -like "*Localization*" } |
+        ForEach-Object { Write-Host "  $($_.FullName)" }
+    Write-Host ""
+    Write-Host "LocalizationManager Add* methods:"
+    $type.GetMethods([Reflection.BindingFlags]"Public,NonPublic,Instance,Static") |
+        Where-Object { $_.Name -like "Add*" } |
+        ForEach-Object { Write-Host "  $($_.ToString())" }
+    exit 0
+}
+
 if ($InspectTrader) {
     & (Join-Path $PSScriptRoot "inspect-trader.ps1") -ValheimDir $ValheimDir
     exit $LASTEXITCODE
@@ -89,5 +109,6 @@ Write-Host ""
 Write-Host "Ready. Launch Valheim Modded from Thunderstore for runtime testing."
 Write-Host "Useful commands:"
 Write-Host "  .\scripts\dev.ps1 -InspectTrader"
+Write-Host "  .\scripts\dev.ps1 -InspectJotunn"
 Write-Host "  .\scripts\dev.ps1 -ShowLog"
 Write-Host "  .\scripts\dev.ps1 -NoInstall"
