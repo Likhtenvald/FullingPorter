@@ -23,10 +23,11 @@ All keys are configurable in the BepInEx config.
 | Action | Default |
 | --- | --- |
 | Toggle hovered container as porter source | `Home` |
+| Talk/react with hovered porter | `E` |
 | Rename hovered porter | `End` |
 | Dismiss hovered porter | `Delete` twice within 3 seconds |
 
-The porter hover UI shows only its name and current activity status. There is no misleading `[E] Talk` prompt.
+The porter hover UI shows only its name and current activity status. Pressing `E` makes the porter react with contextual banter and a vanilla Fuling vocalization; it does not open a menu or change logistics. Dialogue has a short anti-spam cooldown and varies for idle, working, returning and blocked/full-storage states.
 
 ## QuickStackPlus integration
 
