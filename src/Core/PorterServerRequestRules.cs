@@ -15,6 +15,11 @@ internal static class PorterServerRequestRules
     internal const int MaxRenameLength = 24;
     internal const float MinActionIntervalSeconds = 0.15f;
 
+    internal static bool IsAuthenticatedSender(long claimedSender, long actualPeerUid)
+    {
+        return claimedSender != 0L && claimedSender == actualPeerUid;
+    }
+
     internal static bool IsWithinInteractionDistance(
         float senderX,
         float senderY,
