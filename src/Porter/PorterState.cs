@@ -134,8 +134,7 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         var status = _worker != null ? _worker.GetStatusText() : "$fullingporter_status_idle";
         var name = TranslateTokenWithSuffix(PorterName);
         var localizedStatus = TranslateTokenWithSuffix(status);
-        var interact = LocalizationManager.Instance.TryTranslate("$fullingporter_interact");
-        return name + "\n" + localizedStatus + "\n[<color=yellow><b>E</b></color>] " + interact;
+        return name + "\n" + localizedStatus;
     }
 
     private static string TranslateTokenWithSuffix(string value)
