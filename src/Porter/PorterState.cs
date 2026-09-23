@@ -132,7 +132,7 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
     {
         var status = _worker != null ? _worker.GetStatusText() : "$fullingporter_status_idle";
         var text = $"{PorterName}\n{status}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
-        return Localization.instance.Localize(text);
+        return global::Localization.instance.Localize(text);
     }
 
     public string GetHoverName() => PorterName;
