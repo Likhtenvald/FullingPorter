@@ -50,10 +50,7 @@ internal sealed class PorterWorker : MonoBehaviour
         // All porter work is server-authoritative. Clients render the replicated
         // result but never mutate container inventories themselves.
         if (!ZNet.instance.IsServer())
-        {
-            _ai?.Halt();
             return;
-        }
 
         if (!_view.IsOwner())
             _view.ClaimOwnership();
@@ -80,7 +77,7 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        if (Vector3.Distance(transform.position, _home) > InteractionDistance)
+        if ((transform.position - _home).sqrMagnitude > InteractionDistance * InteractionDistance)
             _state = WorkState.ReturningHome;
     }
 
@@ -197,6 +194,7 @@ internal sealed class PorterWorker : MonoBehaviour
         ClearBatch();
 
         var radius = Plugin.WorkRadius.Value;
+        var radiusSqr = radius * radius;
         var maxStacks = Mathf.Max(1, Plugin.MaxStacksPerTrip.Value);
 
         // Unity scene-wide searches are relatively expensive. Take one snapshot
@@ -208,14 +206,14 @@ internal sealed class PorterWorker : MonoBehaviour
         foreach (var candidateSource in containers)
         {
             if (!IsUsable(candidateSource) || !SourceContainerMarker.IsSource(candidateSource)) continue;
-            if (Vector3.Distance(_home, candidateSource.transform.position) > radius) continue;
+            if ((candidateSource.transform.position - _home).sqrMagnitude > radiusSqr) continue;
 
             var items = candidateSource.GetInventory()?.GetAllItems();
             if (items == null || items.Count == 0) continue;
 
             foreach (var candidateItem in items)
             {
-                var target = FindDestination(candidateItem, candidateSource, radius, containers, acceptedIds);
+                var target = FindDestination(candidateItem, candidateSource, radiusSqr, containers, acceptedIds);
                 if (target == null) continue;
 
                 _cargo.Add(new CargoEntry
@@ -239,7 +237,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private Container FindDestination(
         ItemDrop.ItemData item,
         Container source,
-        float radius,
+        float radiusSqr,
         Container[] containers,
         Dictionary<Container, HashSet<string>> acceptedIds)
     {
@@ -252,7 +250,7 @@ internal sealed class PorterWorker : MonoBehaviour
         foreach (var container in containers)
         {
             if (!IsUsable(container) || container == source || SourceContainerMarker.IsSource(container)) continue;
-            if (Vector3.Distance(_home, container.transform.position) > radius) continue;
+            if ((container.transform.position - _home).sqrMagnitude > radiusSqr) continue;
 
             if (!acceptedIds.TryGetValue(container, out var accepted))
             {
@@ -265,11 +263,11 @@ internal sealed class PorterWorker : MonoBehaviour
             var inventory = container.GetInventory();
             if (inventory == null || !inventory.CanAddItem(item, -1)) continue;
 
-            var distance = Vector3.Distance(source.transform.position, container.transform.position);
-            if (distance < bestDistance)
+            var distanceSqr = (source.transform.position - container.transform.position).sqrMagnitude;
+            if (distanceSqr < bestDistance)
             {
                 best = container;
-                bestDistance = distance;
+                bestDistance = distanceSqr;
             }
         }
 
@@ -286,11 +284,11 @@ internal sealed class PorterWorker : MonoBehaviour
             var destination = _cargo[i].Destination;
             if (!IsUsable(destination)) continue;
 
-            var distance = Vector3.Distance(transform.position, destination.transform.position);
-            if (distance < bestDistance)
+            var distanceSqr = (transform.position - destination.transform.position).sqrMagnitude;
+            if (distanceSqr < bestDistance)
             {
                 bestIndex = i;
-                bestDistance = distance;
+                bestDistance = distanceSqr;
             }
         }
 
