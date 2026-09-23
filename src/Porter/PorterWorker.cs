@@ -35,6 +35,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
     private Container _activeDestination;
+    private bool _returningFromWork;
     private float _blockedStatusUntil;
     private float _blockedDialogueUntil;
 
@@ -99,7 +100,10 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
+        {
+            _returningFromWork = false;
             _state = WorkState.ReturningHome;
+        }
     }
 
     private void TickToSource()
@@ -253,6 +257,7 @@ internal sealed class PorterWorker : MonoBehaviour
             _ai?.Halt();
             ResetMoveTracking();
             _state = WorkState.Idle;
+            _returningFromWork = false;
             _nextScan = 0f;
         }
     }
@@ -393,7 +398,9 @@ internal sealed class PorterWorker : MonoBehaviour
             case WorkState.ToDestination:
                 return $"$fullingporter_status_delivering ({_cargo.Count}/{capacity})";
             case WorkState.ReturningHome:
-                return "$fullingporter_status_returning";
+                return _returningFromWork
+                    ? "$fullingporter_status_returning"
+                    : "$fullingporter_status_idle";
             default:
                 return "$fullingporter_status_idle";
         }
@@ -611,6 +618,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if ((transform.position - _home).sqrMagnitude > HomeDistance * HomeDistance)
         {
+            _returningFromWork = true;
             _state = WorkState.ReturningHome;
             return;
         }
@@ -622,6 +630,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private void AbortBatch()
     {
         ClearBatch();
+        _returningFromWork = true;
         _state = WorkState.ReturningHome;
     }
 
