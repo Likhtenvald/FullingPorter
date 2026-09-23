@@ -15,7 +15,8 @@ internal static class LocalizationRegistry
         ["fullingporter_source_disabled"] = "Porter source chest unassigned",
         ["fullingporter_spawned"] = "Your Fuling porter has arrived",
         ["fullingporter_rename_title"] = "Name your porter",
-        ["fullingporter_dismissed"] = "Porter contract terminated"
+        ["fullingporter_dismissed"] = "Porter contract terminated",
+        ["fullingporter_dismiss_confirm"] = "Press the dismissal key again within 3 seconds to terminate this contract"
     };
 
     private static readonly Dictionary<string, string> Russian = new()
@@ -28,7 +29,8 @@ internal static class LocalizationRegistry
         ["fullingporter_source_disabled"] = "Сундук больше не является источником грузчика",
         ["fullingporter_spawned"] = "Ваш фулинг-грузчик прибыл",
         ["fullingporter_rename_title"] = "Имя грузчика",
-        ["fullingporter_dismissed"] = "Контракт с грузчиком расторгнут"
+        ["fullingporter_dismissed"] = "Контракт с грузчиком расторгнут",
+        ["fullingporter_dismiss_confirm"] = "Нажмите клавишу увольнения ещё раз в течение 3 секунд, чтобы расторгнуть контракт"
     };
 
     internal static void Register()
