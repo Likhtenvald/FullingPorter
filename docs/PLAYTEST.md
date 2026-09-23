@@ -92,18 +92,20 @@ Run host + one client with identical mod versions.
 
 1. Host buys/uses contract.
 2. Client sees the same porter, name, position and movement.
-3. Client attempts another contract; server refuses it.
-4. Host and client attempt contracts at nearly the same time; exactly one porter is created.
-5. Host toggles a source; client sees the marker.
-6. Client toggles a source; server applies it and host sees the marker.
-7. Host renames porter; client receives the name.
-8. Client renames porter; host receives the name.
-9. Host dismisses porter.
-10. Repeat with client dismissal.
-11. Transfer one stack and then a 10-stack batch; verify no duplicate/loss.
-12. Disconnect/reconnect client during normal porter activity.
-13. Restart world/server and verify one-porter persistence.
-14. Restart while porter is outside the loaded zone; a second contract must still be blocked.
+3. On the client, hover over the porter while it collects, delivers, and returns; confirm each status and the remaining-stack counter match the host. Wait until it is idle and confirm the status changes back.
+4. On the client, interact with the porter while it is working and returning; confirm the dialogue uses the corresponding activity context.
+5. Client attempts another contract; server refuses it.
+6. Host and client attempt contracts at nearly the same time; exactly one porter is created.
+7. Host toggles a source; client sees the marker.
+8. Client toggles a source; server applies it and host sees the marker.
+9. Host renames porter; client receives the name.
+10. Client renames porter; host receives the name.
+11. Host dismisses porter.
+12. Repeat with client dismissal.
+13. Transfer one stack and then a 10-stack batch; verify no duplicate/loss.
+14. Disconnect/reconnect client during normal porter activity.
+15. Restart world/server and verify one-porter persistence.
+16. Restart while porter is outside the loaded zone; a second contract must still be blocked.
 
 ## Dedicated-server gate
 
