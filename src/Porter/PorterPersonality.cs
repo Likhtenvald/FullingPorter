@@ -1,4 +1,5 @@
 using FullingPorter.Core;
+using FullingPorter.Network;
 using Jotunn.Managers;
 using UnityEngine;
 
@@ -53,10 +54,11 @@ internal sealed class PorterPersonality : MonoBehaviour
 
     private PorterWorker _worker;
     private PorterState _state;
+    private ZNetView _view;
     private float _nextReactionTime;
     private float _nextAmbientReactionTime;
     private const float ReactionCooldown = 2.5f;
-    private const float AmbientHearDistance = 18f;
+    internal const float AmbientHearDistance = 18f;
     private const float AmbientMinInterval = 18f;
     private const float AmbientMaxInterval = 42f;
 
@@ -64,6 +66,7 @@ internal sealed class PorterPersonality : MonoBehaviour
     {
         _worker = GetComponent<PorterWorker>();
         _state = GetComponent<PorterState>();
+        _view = GetComponent<ZNetView>();
         ScheduleNextAmbient();
     }
 
@@ -86,7 +89,7 @@ internal sealed class PorterPersonality : MonoBehaviour
             return;
         }
 
-        Speak(player);
+        PorterRpc.RequestSpeak(_view, true);
         ScheduleNextAmbient();
     }
 
@@ -95,24 +98,48 @@ internal sealed class PorterPersonality : MonoBehaviour
         if (player == null || Time.time < _nextReactionTime)
             return false;
 
-        _nextReactionTime = Time.time + ReactionCooldown;
-        Speak(player);
+        if (!PorterRpc.RequestSpeak(_view, false))
+            return false;
 
-        // A manual interaction should not be followed immediately by ambient
-        // chatter, otherwise E can accidentally produce two lines in a row.
+        _nextReactionTime = Time.time + ReactionCooldown;
+
+        // Keep local ambient requests away from a manual interaction. The
+        // server also enforces its own cooldown for all connected players.
         if (_nextAmbientReactionTime < Time.time + 8f)
             _nextAmbientReactionTime = Time.time + 8f;
 
         return true;
     }
 
-    private void Speak(Player player)
+    internal bool TrySpeakServer(bool ambient)
     {
-        var line = PickLine();
-        var localized = LocalizationManager.Instance.TryTranslate(line);
+        if (ZNet.instance == null || !ZNet.instance.IsServer() ||
+            _view == null || !_view.IsValid() || Time.time < _nextReactionTime ||
+            (ambient && Time.time < _nextAmbientReactionTime))
+            return false;
 
-        ShowSpeechBubble(player, localized);
-        PlayVoice();
+        _nextReactionTime = Time.time + ReactionCooldown;
+        ScheduleNextAmbient();
+
+        var line = PickLine();
+        var voiceIndex = Random.Range(0, VoicePrefabs.Length);
+        PlaySpeech(line, voiceIndex);
+        PorterRpc.BroadcastSpeech(_view, line, voiceIndex);
+        return true;
+    }
+
+    internal void PlaySpeech(string line, int voiceIndex)
+    {
+        if (string.IsNullOrEmpty(line) || voiceIndex < 0 || voiceIndex >= VoicePrefabs.Length ||
+            Player.m_localPlayer == null)
+            return;
+
+        if ((Player.m_localPlayer.transform.position - transform.position).sqrMagnitude > 20f * 20f)
+            return;
+
+        var localized = LocalizationManager.Instance.TryTranslate(line);
+        ShowSpeechBubble(Player.m_localPlayer, localized);
+        PlayVoice(voiceIndex);
     }
 
     private void ScheduleNextAmbient()
@@ -167,9 +194,9 @@ internal sealed class PorterPersonality : MonoBehaviour
         return lines[Random.Range(0, lines.Length)];
     }
 
-    private void PlayVoice()
+    private void PlayVoice(int voiceIndex)
     {
-        var prefabName = VoicePrefabs[Random.Range(0, VoicePrefabs.Length)];
+        var prefabName = VoicePrefabs[voiceIndex];
         var soundPrefab = PrefabManager.Instance.GetPrefab(prefabName);
         if (soundPrefab == null)
         {
