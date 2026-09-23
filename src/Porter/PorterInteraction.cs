@@ -17,10 +17,7 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
     {
         if (hold || character != Player.m_localPlayer) return false;
 
-        // Valheim does not reliably pass the alternate-use modifier through
-        // Interactable.Interact for this hover target, so read the modifier
-        // directly as well.
-        if (alt || ZInput.GetButton("AltPlace"))
+        if (alt)
         {
             Dismiss(character);
             return true;
