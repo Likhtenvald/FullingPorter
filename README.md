@@ -27,7 +27,7 @@ All keys are configurable in the BepInEx config.
 | Rename hovered porter | `End` |
 | Dismiss hovered porter | `Delete` twice within 3 seconds |
 
-The porter hover UI shows only its name and current activity status. Pressing `E` makes the porter react with contextual banter and a vanilla Fuling vocalization; it does not open a menu or change logistics. Dialogue has a short anti-spam cooldown and varies for idle, working, returning and blocked/full-storage states.
+The porter hover UI shows only its name and current activity status. Pressing `E` makes the porter react with contextual banter and a vanilla Fuling vocalization, visible and audible to nearby players; it does not open a menu or change logistics. Dialogue has a short anti-spam cooldown and varies for idle, working, returning and blocked/full-storage states.
 
 ## QuickStackPlus integration
 
@@ -43,13 +43,13 @@ A container marked as a porter source is not considered a destination during tha
 
 ## Networking and persistence
 
-Porter work and inventory transfers execute on the server. Player actions that mutate world state — spawning, source toggling, renaming and dismissal — are sent through a Jötunn RPC to the server.
+Porter work and inventory transfers execute on the server. Player actions that mutate world state — spawning, source toggling, renaming and dismissal — are sent through a Jötunn RPC to the server. The server validates dialogue requests, chooses each line and voice, and sends the same event to nearby clients.
 
 The one-porter invariant is persisted with a world global key containing the porter's ZDOID. This lets the server distinguish a real unloaded porter from a stale key left by a deleted object.
 
 The porter's name, home position, activity status and dialogue context are stored in its ZDO. Clients display the server's current activity and remaining stack count. Source markers are stored on the source container ZDO.
 
-The server checks that every joining client has FullingPorter **0.1.1**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
+The server checks that every joining client has FullingPorter **0.1.2**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
 
 ## Configuration defaults
 
