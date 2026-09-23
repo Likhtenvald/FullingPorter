@@ -128,3 +128,18 @@ Do not use a valuable production world until these gates pass.
 7. Repeat with the destination nearly full and verify the porter does not over-plan capacity or lose/duplicate items.
 
 Expected result: one batch may contain several different item types for the same destination, and planned destination capacity is respected across the whole batch.
+
+
+## Multiplayer regression: RPC hardening
+
+Run these checks with one host/server and one remote client.
+
+1. From the remote client, use a valid contract normally and verify the porter spawns beside that client's server-observed position.
+2. Stand more than 5 metres from a source chest and verify a remote source-toggle request is rejected; move next to it and verify the same action succeeds.
+3. Stand more than 5 metres from the porter and verify remote rename/dismiss requests are rejected; move next to the porter and verify they succeed.
+4. Rename the porter with exactly 24 characters and verify success. Attempt more than 24 characters through a modified/test client and verify the server rejects it.
+5. Send porter actions faster than the server action interval with a modified/test client and verify excess requests are rejected without changing world state.
+6. With a modified/test client, forge the routed sender UID to another connected peer and verify the FullingPorter routed RPC is dropped before its action handler runs.
+7. After rejected requests, verify source markers, porter name, world-presence state, and inventories remain unchanged.
+
+Expected result: every remote action is attributed to the real inbound peer, proximity is enforced server-side, and rejected RPCs have no world-state side effects.
