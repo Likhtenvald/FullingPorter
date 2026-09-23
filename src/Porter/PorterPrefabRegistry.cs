@@ -20,7 +20,8 @@ internal static class PorterPrefabRegistry
         var custom = new CustomPrefab(PrefabName, source);
         var prefab = custom.Prefab;
         prefab.AddComponent<PorterState>();
-        prefab.AddComponent<PorterWorker>();\n        prefab.AddComponent<PorterInteraction>();
+        prefab.AddComponent<PorterWorker>();
+        prefab.AddComponent<PorterInteraction>();
 
         // Runtime AI neutralisation is finalized in PorterWorker because
         // vanilla Character/MonsterAI initialization order matters.
