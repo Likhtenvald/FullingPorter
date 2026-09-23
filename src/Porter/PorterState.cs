@@ -128,11 +128,14 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
             _character.m_name = PorterName;
     }
 
-    public string GetHoverName() => PorterName;
-    public float GetHoverOffset() => 1.5f;
-    public string GetHoverText()
+    internal string BuildHoverText()
     {
         var status = _worker != null ? _worker.GetStatusText() : "$fullingporter_status_idle";
-        return $"{PorterName}\n{status}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
+        var text = $"{PorterName}\n{status}\n[<color=yellow><b>$KEY_Use</b></color>] $fullingporter_interact";
+        return Localization.instance.Localize(text);
     }
+
+    public string GetHoverName() => PorterName;
+    public float GetHoverOffset() => 1.5f;
+    public string GetHoverText() => BuildHoverText();
 }
