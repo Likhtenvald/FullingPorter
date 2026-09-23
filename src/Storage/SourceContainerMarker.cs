@@ -12,14 +12,28 @@ internal static class SourceContainerMarker
         return view != null && view.IsValid() && view.GetZDO()?.GetBool(SourceKey, false) == true;
     }
 
-    internal static bool Toggle(Container container)
+    internal static bool TryToggleServer(Container container, out bool enabled)
     {
+        enabled = false;
+        if (ZNet.instance == null || !ZNet.instance.IsServer())
+            return false;
+
         var view = container ? container.GetComponent<ZNetView>() : null;
-        if (view == null || !view.IsValid()) return false;
-        if (!view.IsOwner()) view.ClaimOwnership();
+        if (view == null || !view.IsValid())
+            return false;
+
+        if (!view.IsOwner())
+            view.ClaimOwnership();
+        if (!view.IsOwner())
+            return false;
+
         var zdo = view.GetZDO();
-        var value = !zdo.GetBool(SourceKey, false);
-        zdo.Set(SourceKey, value);
-        return value;
+        if (zdo == null)
+            return false;
+
+        enabled = !zdo.GetBool(SourceKey, false);
+        zdo.Set(SourceKey, enabled);
+        return true;
     }
+
 }
