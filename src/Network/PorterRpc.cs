@@ -17,7 +17,9 @@ internal static class PorterRpc
         Spawn = 1,
         ToggleSource = 2,
         Dismiss = 3,
-        Rename = 4
+        Rename = 4,
+        SpeakRequest = 5,
+        SpeechEvent = 6
     }
 
     private static CustomRPC _rpc;
@@ -144,6 +146,43 @@ internal static class PorterRpc
         _rpc.SendPackage(serverPeerId, pkg);
     }
 
+    internal static bool RequestSpeak(ZNetView view, bool ambient)
+    {
+        var zdo = view != null && view.IsValid() ? view.GetZDO() : null;
+        if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
+            return false;
+
+        if (ZNet.instance != null && ZNet.instance.IsServer())
+            return view.GetComponent<PorterPersonality>()?.TrySpeakServer(ambient) == true;
+
+        var serverPeerId = GetServerPeerId();
+        if (serverPeerId == 0L)
+            return false;
+
+        var pkg = new ZPackage();
+        pkg.Write((int)ActionCode.SpeakRequest);
+        pkg.Write(zdo.m_uid);
+        pkg.Write(ambient);
+        _rpc.SendPackage(serverPeerId, pkg);
+        return true;
+    }
+
+    internal static void BroadcastSpeech(ZNetView view, string line, int voiceIndex)
+    {
+        if (_rpc == null || ZNet.instance == null || !ZNet.instance.IsServer() ||
+            view == null || !view.IsValid())
+            return;
+
+        var pkg = NewResult(ActionCode.SpeechEvent, true);
+        pkg.Write(view.GetZDO().m_uid);
+        pkg.Write(line);
+        pkg.Write(voiceIndex);
+
+        // m_peers contains remote clients only. The listen-server host has
+        // already rendered its own bubble and voice in TrySpeakServer.
+        _rpc.SendPackage(ZNet.instance.m_peers, pkg);
+    }
+
     private static long GetServerPeerId()
     {
         var routed = ZRoutedRpc.instance;
@@ -194,6 +233,9 @@ internal static class PorterRpc
             case ActionCode.Rename:
                 HandleRename(sender, pkg);
                 break;
+            case ActionCode.SpeakRequest:
+                HandleSpeak(sender, pkg);
+                break;
         }
 
         yield return null;
@@ -222,6 +264,16 @@ internal static class PorterRpc
             case ActionCode.Dismiss:
                 if (success)
                     Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "$fullingporter_dismissed");
+                break;
+
+            case ActionCode.SpeechEvent:
+                if (success && sender == GetServerPeerId())
+                {
+                    var target = FindObject(pkg.ReadZDOID());
+                    var line = pkg.ReadString();
+                    var voiceIndex = pkg.ReadInt();
+                    target?.GetComponent<PorterPersonality>()?.PlaySpeech(line, voiceIndex);
+                }
                 break;
         }
 
@@ -345,6 +397,27 @@ internal static class PorterRpc
 
         var success = state.SetNameServer(name);
         SendResult(sender, ActionCode.Rename, success);
+    }
+
+    private static void HandleSpeak(long sender, ZPackage pkg)
+    {
+        var target = FindObject(pkg.ReadZDOID());
+        var personality = target != null ? target.GetComponent<PorterPersonality>() : null;
+        var ambient = pkg.ReadBool();
+        if (personality == null ||
+            !TryResolveRemoteSender(sender, out _, out var senderPosition) ||
+            !TryConsumeActionBudget(sender))
+            return;
+
+        var allowedDistance = ambient ? PorterPersonality.AmbientHearDistance
+            : PorterServerRequestRules.InteractionDistance;
+        if ((senderPosition - target.transform.position).sqrMagnitude > allowedDistance * allowedDistance)
+        {
+            Plugin.Log.LogWarning($"Rejected porter speech request from peer {sender}: target is out of range.");
+            return;
+        }
+
+        personality.TrySpeakServer(ambient);
     }
 
     private static bool ValidateRemoteTargetAction(long sender, Vector3 targetPosition)

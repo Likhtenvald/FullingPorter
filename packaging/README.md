@@ -4,7 +4,7 @@ Hire a friendly Fuling from Haldor to move stacks from the chests you mark as so
 
 ## Install
 
-Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.1 for this beta).
+Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.2 for this beta).
 
 For manual installation, install BepInExPack Valheim, Jotunn and QuickStackPlus first, then place `FullingPorter.dll` in `BepInEx/plugins/FullingPorter/` on the host and every client.
 
@@ -15,12 +15,12 @@ For manual installation, install BepInExPack Valheim, Jotunn and QuickStackPlus 
 3. Use QuickStackPlus Smart Storage to choose accepted item types on destination chests.
 4. The porter carries up to **10 stacks** per trip within **30 m** of its home by default.
 
-Look at the porter to see its name and current status. Press **E** to talk, **End** to rename, or **Delete** twice within three seconds to dismiss it. These keys are configurable.
+Look at the porter to see its name and current status. Nearby players see and hear the same dialogue when anyone talks to the porter. Press **E** to talk, **End** to rename, or **Delete** twice within three seconds to dismiss it. These keys are configurable.
 
 The host controls contract price, work radius and trip capacity. Key bindings stay local to each player.
 
 ## Beta testing
 
-Singleplayer and two-PC host/client sessions have been tested, including transfers, shared settings, activity status and version mismatch handling. Dedicated servers and migration from older saved worlds have not yet been verified. Back up valuable worlds before beta testing.
+The previous 0.1.1 beta passed singleplayer and two-PC host/client tests for transfers, shared settings, activity status and version mismatch handling. Dialogue synchronization in 0.1.2 still needs a two-PC check. Dedicated servers and migration from older saved worlds have not yet been verified. Back up valuable worlds before beta testing.
 
 Please report bugs at [GitHub Issues](https://github.com/Likhtenvald/FullingPorter/issues). Include the mod version, host/client setup, steps to reproduce, item counts before and after a transfer, and `BepInEx/LogOutput.log` from the host when relevant.
