@@ -52,6 +52,7 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
         if (!_view.IsOwner())
             _view.ClaimOwnership();
 
+        PorterState.ClearWorldOccupied();
         character.Message(MessageHud.MessageType.Center, "$fullingporter_dismissed");
         ZNetScene.instance.Destroy(gameObject);
     }
