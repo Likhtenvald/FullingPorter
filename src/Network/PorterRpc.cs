@@ -176,8 +176,8 @@ internal static class PorterRpc
 
     private static void HandleToggleSource(long sender, ZPackage pkg)
     {
-        var view = FindView(pkg.ReadZDOID());
-        var container = view != null ? view.GetComponent<Container>() : null;
+        var target = FindObject(pkg.ReadZDOID());
+        var container = target != null ? target.GetComponent<Container>() : null;
         if (container == null || !SourceContainerMarker.TryToggleServer(container, out var enabled))
         {
             SendResult(sender, ActionCode.ToggleSource, false);
@@ -191,8 +191,9 @@ internal static class PorterRpc
 
     private static void HandleDismiss(long sender, ZPackage pkg)
     {
-        var view = FindView(pkg.ReadZDOID());
-        var state = view != null ? view.GetComponent<PorterState>() : null;
+        var target = FindObject(pkg.ReadZDOID());
+        var view = target != null ? target.GetComponent<ZNetView>() : null;
+        var state = target != null ? target.GetComponent<PorterState>() : null;
         if (view == null || state == null || ZNetScene.instance == null)
         {
             SendResult(sender, ActionCode.Dismiss, false);
@@ -208,14 +209,14 @@ internal static class PorterRpc
         }
 
         PorterState.ClearWorldOccupied();
-        ZNetScene.instance.Destroy(view.gameObject);
+        ZNetScene.instance.Destroy(target);
         SendResult(sender, ActionCode.Dismiss, true);
     }
 
     private static void HandleRename(long sender, ZPackage pkg)
     {
-        var view = FindView(pkg.ReadZDOID());
-        var state = view != null ? view.GetComponent<PorterState>() : null;
+        var target = FindObject(pkg.ReadZDOID());
+        var state = target != null ? target.GetComponent<PorterState>() : null;
         if (state == null)
         {
             SendResult(sender, ActionCode.Rename, false);
@@ -226,7 +227,7 @@ internal static class PorterRpc
         SendResult(sender, ActionCode.Rename, true);
     }
 
-    private static ZNetView FindView(ZDOID id)
+    private static GameObject FindObject(ZDOID id)
     {
         return ZNetScene.instance != null ? ZNetScene.instance.FindInstance(id) : null;
     }
