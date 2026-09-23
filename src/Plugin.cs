@@ -4,6 +4,7 @@ using HarmonyLib;
 using Jotunn;
 using Jotunn.Managers;
 using FullingPorter.Localization;
+using FullingPorter.Network;
 using UnityEngine;
 
 namespace FullingPorter;
@@ -23,6 +24,7 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> WorkRadius;
     internal static ConfigEntry<int> MaxStacksPerTrip;
     internal static ConfigEntry<KeyCode> DismissKey;
+    internal static ConfigEntry<KeyCode> RenameKey;
     internal static ConfigEntry<KeyCode> SourceChestKey;
 
     private Harmony _harmony;
@@ -30,11 +32,14 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Log = Logger;
-        ContractPrice = Config.Bind("Contract", "Price", 10, "Haldor contract price in coins.");
+        ContractPrice = Config.Bind("Contract", "Price", 1500, "Haldor contract price in coins.");
         WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 10, "Maximum distinct stacks carried per trip.");
         DismissKey = Config.Bind("Porter", "DismissKey", KeyCode.Delete, "Key used while looking at a porter to dismiss it. Press twice to confirm.");
+        RenameKey = Config.Bind("Porter", "RenameKey", KeyCode.End, "Key used while looking at a porter to rename it.");
         SourceChestKey = Config.Bind("Porter", "SourceChestKey", KeyCode.Home, "Key used while looking at a container to toggle it as a porter source.");
+
+        PorterRpc.Register();
 
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
