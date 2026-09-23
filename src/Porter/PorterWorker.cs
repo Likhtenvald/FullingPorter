@@ -179,7 +179,16 @@ internal sealed class PorterWorker : MonoBehaviour
 
         _nextTransferTime = Time.time + TransferInterval;
 
-        if (TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item))
+        var transferResult = TransferService.TryMoveWholeStack(_source, entry.Destination, entry.Item);
+
+        if (transferResult == TransferService.TransferResult.WaitingForOwnership)
+        {
+            // ClaimOwnership may complete on a later network tick. Stay at the
+            // destination and retry instead of dropping this stack from the batch.
+            return;
+        }
+
+        if (transferResult == TransferService.TransferResult.Success)
         {
             ClearDestinationCooldown(entry.Destination, entry.Item);
             Plugin.Log.LogDebug($"Porter moved {entry.Item.m_shared.m_name}.");
@@ -189,8 +198,7 @@ internal sealed class PorterWorker : MonoBehaviour
             SetDestinationCooldown(entry.Destination, entry.Item);
         }
 
-        // Whether the transfer succeeded or failed, do not get stuck on this
-        // destination. A failed stack will be reconsidered during the next scan.
+        // A real validation/space failure is reconsidered during a later scan.
         _cargo.RemoveAt(index);
 
         if (_cargo.Count == 0)
