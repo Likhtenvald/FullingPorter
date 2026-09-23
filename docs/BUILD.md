@@ -1,23 +1,61 @@
 # Local build
 
-The compiler must use the assemblies from the same Valheim installation that will run the mod.
+Build against the same Valheim installation and mod profile that will run the test. Valheim API signatures change between game builds, so a successful build against unrelated reference DLLs is not a valid gate.
 
-## Windows / Steam
-
-Prerequisites: current Valheim, BepInEx, Jotunn and QuickStackPlus installed; .NET SDK capable of building net48.
+## Recommended development command
 
 From the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+```
+
+The script:
+- detects the local Valheim installation and Thunderstore profile;
+- builds against the installed Valheim/BepInEx/Jötunn assemblies;
+- writes `artifacts\FullingPorter.dll`;
+- installs the DLL into the FullingPorter folder in the active Thunderstore profile.
+
+Valheim must be fully closed before replacing the DLL. If `Copy-Item` reports an open mapped section / locked DLL, close the game and rerun the command.
+
+## Build without install
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -NoInstall
+```
+
+Or use the lower-level build script directly:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build-local.ps1
 ```
 
-If Valheim is not in the default Steam location:
+## Non-default Valheim path
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build-local.ps1 -ValheimDir "D:\SteamLibrary\steamapps\common\Valheim"
 ```
 
-Successful output is written to `artifacts\FullingPorter.dll`.
+## Current config defaults
 
-If compilation fails, preserve the entire console output. Compiler errors are the useful result at this stage; they tell us which current Valheim/Jotunn signatures need adapting.
+A fresh config should contain:
+
+- `Contract.Price = 1500`
+- `Porter.WorkRadius = 30`
+- `Porter.MaxStacksPerTrip = 10`
+- `Porter.SourceChestKey = Home`
+- `Porter.RenameKey = End`
+- `Porter.DismissKey = Delete`
+
+BepInEx preserves existing values. If a development profile previously used price 10 or capacity 12, changing the source defaults does not overwrite that file. Update the existing config manually or delete the test config and let BepInEx regenerate it.
+
+An obsolete `CanDie` entry from older development builds is ignored; the porter is now always immortal.
+
+## After an API-sensitive change
+
+Check the full compiler output. In particular verify:
+- Harmony target methods resolve;
+- `ZoneSystem`, `ZDOMan`, `ZNetScene`, `ZPackage` and Jötunn RPC signatures match the installed build;
+- no older public API was assumed from online decompilations.
+
+Then run the relevant section of [PLAYTEST.md](PLAYTEST.md).
