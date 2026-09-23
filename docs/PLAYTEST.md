@@ -166,12 +166,11 @@ Expected result: an open source or destination chest pauses the porter. A chest 
 
 1. On the host/server, set Contract.Price to a distinctive value such as 1777.
 2. On the remote client, set Contract.Price to a different local value such as 999 before joining.
-3. Also give WorkRadius and MaxStacksPerTrip different values on the two machines.
+3. Keep WorkRadius and MaxStacksPerTrip at their normal local values.
 4. Start the world on the host and join from the remote client.
 5. Open Haldor's store on both machines.
 6. Verify the Fuling Porter Contract price is the server value on both machines.
-7. Verify porter work radius and trip capacity follow the server values, not the remote client's local file.
-8. Disconnect the client and verify its local config values are restored outside the server session.
-9. Verify DismissKey, RenameKey, and SourceChestKey remain local per-client settings.
+7. Verify WorkRadius, MaxStacksPerTrip, DismissKey, RenameKey, and SourceChestKey are not changed by contract-price synchronization.
+8. Disconnect the client and verify its local contract price is restored outside the server session.
 
-Expected result: gameplay settings are synchronized and locked to the server while connected; input bindings remain local.
+Expected result: only the contract price is synchronized and locked to the server while connected; porter behavior settings and input bindings remain local.
