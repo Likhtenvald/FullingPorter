@@ -81,6 +81,14 @@ internal static class PorterRpc
         if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
             return;
 
+        if (ZNet.instance != null && ZNet.instance.IsServer())
+        {
+            if (SourceContainerMarker.TryToggleServer(container, out var enabled))
+                Player.m_localPlayer?.Message(MessageHud.MessageType.Center,
+                    enabled ? "$fullingporter_source_enabled" : "$fullingporter_source_disabled");
+            return;
+        }
+
         var serverPeerId = GetServerPeerId();
         if (serverPeerId == 0L) return;
 
@@ -96,6 +104,13 @@ internal static class PorterRpc
         if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
             return;
 
+        if (ZNet.instance != null && ZNet.instance.IsServer())
+        {
+            if (TryDismissServer(view.gameObject))
+                Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "$fullingporter_dismissed");
+            return;
+        }
+
         var serverPeerId = GetServerPeerId();
         if (serverPeerId == 0L) return;
 
@@ -110,6 +125,13 @@ internal static class PorterRpc
         var zdo = view != null && view.IsValid() ? view.GetZDO() : null;
         if (_rpc == null || ZRoutedRpc.instance == null || zdo == null)
             return;
+
+        if (ZNet.instance != null && ZNet.instance.IsServer())
+        {
+            var state = view.GetComponent<PorterState>();
+            state?.SetNameServer(name);
+            return;
+        }
 
         var serverPeerId = GetServerPeerId();
         if (serverPeerId == 0L) return;
@@ -280,9 +302,21 @@ internal static class PorterRpc
             yield break;
         }
 
+        SendResult(sender, ActionCode.Dismiss, TryDismissServer(target));
+    }
+
+    private static bool TryDismissServer(GameObject target)
+    {
+        if (ZNet.instance == null || !ZNet.instance.IsServer() || target == null || ZNetScene.instance == null)
+            return false;
+
+        var state = target.GetComponent<PorterState>();
+        if (state == null)
+            return false;
+
         PorterState.ClearWorldOccupied();
         ZNetScene.instance.Destroy(target);
-        SendResult(sender, ActionCode.Dismiss, true);
+        return true;
     }
 
     private static void HandleRename(long sender, ZPackage pkg)
