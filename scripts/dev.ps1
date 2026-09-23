@@ -64,7 +64,14 @@ if ($InspectJotunn) {
     if (!$type) { throw "Jotunn.Managers.LocalizationManager not found." }
     Write-Host "Jotunn: $jotunnDll"
     Write-Host "Localization-related types:"
-    try { $asm.GetTypes() } catch [Reflection.ReflectionTypeLoadException] { $_.Exception.Types | Where-Object { $_ } } |
+    $jotunnTypes = @()
+    try {
+        $jotunnTypes = $asm.GetTypes()
+    }
+    catch [Reflection.ReflectionTypeLoadException] {
+        $jotunnTypes = $_.Exception.Types | Where-Object { $_ -ne $null }
+    }
+    $jotunnTypes |
         Where-Object { $_.FullName -like "*Localization*" } |
         ForEach-Object { Write-Host "  $($_.FullName)" }
     Write-Host ""
