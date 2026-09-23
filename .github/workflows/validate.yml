@@ -15,6 +15,27 @@ jobs:
           test -f src/Plugin.cs
           test -f src/Porter/PorterWorker.cs
           test -f src/Storage/QuickStackPlusBridge.cs
+      - name: Verify release version alignment
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import re
+          import xml.etree.ElementTree as ET
+
+          plugin = pathlib.Path("src/Plugin.cs").read_text(encoding="utf-8")
+          match = re.search(r'public const string PluginVersion\s*=\s*"([^"]+)"', plugin)
+          if match is None:
+              raise SystemExit("PluginVersion was not found")
+          versions = {
+              "plugin": match.group(1),
+              "project": ET.parse("FullingPorter.csproj").findtext(".//Version"),
+              "manifest": json.loads(pathlib.Path("manifest.json").read_text(encoding="utf-8"))["version_number"],
+          }
+          if len(set(versions.values())) != 1 or re.fullmatch(r"\d+\.\d+\.\d+", match.group(1)) is None:
+              raise SystemExit(f"Release versions must match and use major.minor.patch: {versions}")
+          print(f"FullingPorter version: {match.group(1)}")
+          PY
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:

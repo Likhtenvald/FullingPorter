@@ -13,11 +13,12 @@ namespace FullingPorter;
 [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
 [BepInDependency(Jotunn.Main.ModGuid)]
 [BepInDependency(QuickStackPlusGuid, BepInDependency.DependencyFlags.HardDependency)]
+[NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Patch)]
 public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "Likhtenvald.FullingPorter";
     public const string PluginName = "FullingPorter";
-    public const string PluginVersion = "0.1.0";
+    public const string PluginVersion = "0.1.1";
     public const string QuickStackPlusGuid = "Goneryx.QuickStackPlus";
 
     internal static BepInEx.Logging.ManualLogSource Log;
