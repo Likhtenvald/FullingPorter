@@ -12,6 +12,12 @@ internal static class ContractUsePatch
         if (__instance != Player.m_localPlayer || item?.m_dropPrefab?.name != ContractRegistry.ItemName)
             return true;
 
+        if (PorterState.WorldHasPorter())
+        {
+            __instance.Message(MessageHud.MessageType.Center, "$fullingporter_already_exists");
+            return false;
+        }
+
         var prefab = ZNetScene.instance?.GetPrefab(PorterPrefabRegistry.PrefabName);
         if (prefab == null)
         {
@@ -27,6 +33,7 @@ internal static class ContractUsePatch
             Quaternion.LookRotation(-forward.normalized));
         if (spawned == null) return false;
 
+        PorterState.MarkWorldOccupied();
         inventory.RemoveOneItem(item);
         __instance.Message(MessageHud.MessageType.Center, "$fullingporter_spawned");
         return false;
