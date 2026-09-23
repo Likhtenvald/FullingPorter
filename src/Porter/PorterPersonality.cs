@@ -55,14 +55,14 @@ internal sealed class PorterPersonality : MonoBehaviour
     };
 
     private PorterWorker _worker;
-    private Talker _talker;
+    private PorterState _state;
     private float _nextReactionTime;
     private const float ReactionCooldown = 2.5f;
 
     private void Awake()
     {
         _worker = GetComponent<PorterWorker>();
-        _talker = GetComponent<Talker>();
+        _state = GetComponent<PorterState>();
     }
 
     internal bool React(Player player)
@@ -75,13 +75,36 @@ internal sealed class PorterPersonality : MonoBehaviour
         var line = PickLine();
         var localized = LocalizationManager.Instance.TryTranslate(line);
 
-        if (_talker != null)
-            _talker.Say(Talker.Type.Normal, localized);
-        else
-            player.Message(MessageHud.MessageType.Center, localized);
-
+        ShowSpeechBubble(player, localized);
         PlayVoice();
         return true;
+    }
+
+    private void ShowSpeechBubble(Player player, string text)
+    {
+        if (Chat.instance == null)
+        {
+            player.Message(MessageHud.MessageType.Center, text);
+            return;
+        }
+
+        var speakerName = _state != null ? _state.PorterName : "$fullingporter_name";
+        speakerName = LocalizationManager.Instance.TryTranslate(speakerName);
+
+        var speaker = new UserInfo
+        {
+            Name = speakerName,
+            Gamertag = speakerName
+        };
+
+        var bubblePosition = transform.position + Vector3.up * 1.8f;
+        Chat.instance.OnNewChatMessage(
+            gameObject,
+            0L,
+            bubblePosition,
+            Talker.Type.Normal,
+            speaker,
+            text);
     }
 
     private string PickLine()
