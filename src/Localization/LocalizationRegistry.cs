@@ -8,9 +8,8 @@ internal static class LocalizationRegistry
     private static readonly Dictionary<string, string> English = new()
     {
         ["fullingporter_name"] = "Fuling Porter",
-        ["fullingporter_interact"] = "Talk",
         ["fullingporter_contract"] = "Fuling Porter Contract",
-        ["fullingporter_contract_desc"] = "A contract for the services of a surprisingly disciplined Fuling porter.",
+        ["fullingporter_contract_desc"] = "Hire one friendly Fuling porter to move source-chest items into QuickStackPlus Smart Storage.",
         ["fullingporter_source_enabled"] = "Porter source chest assigned",
         ["fullingporter_source_disabled"] = "Porter source chest unassigned",
         ["fullingporter_source_hover"] = "Porter source",
@@ -28,9 +27,8 @@ internal static class LocalizationRegistry
     private static readonly Dictionary<string, string> Russian = new()
     {
         ["fullingporter_name"] = "Фулинг-грузчик",
-        ["fullingporter_interact"] = "Поговорить",
         ["fullingporter_contract"] = "Контракт фулинга-грузчика",
-        ["fullingporter_contract_desc"] = "Контракт на услуги на удивление дисциплинированного фулинга-грузчика.",
+        ["fullingporter_contract_desc"] = "Наймите одного дружелюбного фулинга-грузчика для переноса вещей из источников в QuickStackPlus Smart Storage.",
         ["fullingporter_source_enabled"] = "Сундук назначен источником грузчика",
         ["fullingporter_source_disabled"] = "Сундук больше не является источником грузчика",
         ["fullingporter_source_hover"] = "Источник грузчика",
