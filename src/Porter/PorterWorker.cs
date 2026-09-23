@@ -32,6 +32,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private int _activeTripCapacity;
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
+    private Container _activeDestination;
 
     private const float InteractionDistance = 2.5f;
     private const float HomeDistance = 0.35f;
@@ -151,7 +152,10 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        var index = FindNearestCargoIndex();
+        if (!HasCargoForDestination(_activeDestination))
+            _activeDestination = FindNearestDestination();
+
+        var index = FindCargoIndexForDestination(_activeDestination);
         if (index < 0)
         {
             FinishBatch();
@@ -162,6 +166,8 @@ internal sealed class PorterWorker : MonoBehaviour
         if (!IsUsable(entry.Destination) || entry.Item == null)
         {
             _cargo.RemoveAt(index);
+            if (!HasCargoForDestination(_activeDestination))
+                _activeDestination = null;
             return;
         }
 
@@ -171,6 +177,8 @@ internal sealed class PorterWorker : MonoBehaviour
             {
                 Plugin.Log.LogDebug("Porter could not reach a destination; skipping this stack.");
                 _cargo.RemoveAt(index);
+                if (!HasCargoForDestination(_activeDestination))
+                    _activeDestination = null;
                 if (_cargo.Count == 0) FinishBatch();
             }
             return;
@@ -202,6 +210,8 @@ internal sealed class PorterWorker : MonoBehaviour
             Plugin.Log.LogWarning($"Porter ownership wait timed out for {DescribeItem(entry.Item)}; skipping this stack.");
             ResetOwnershipWait();
             _cargo.RemoveAt(index);
+            if (!HasCargoForDestination(_activeDestination))
+                _activeDestination = null;
             if (_cargo.Count == 0) FinishBatch();
             return;
         }
@@ -232,6 +242,8 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         _cargo.RemoveAt(index);
+        if (!HasCargoForDestination(_activeDestination))
+            _activeDestination = null;
 
         if (_cargo.Count == 0)
             FinishBatch();
@@ -251,6 +263,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private bool TryFindBatch()
     {
         ClearBatch();
+        CleanupDestinationCooldowns();
 
         var radius = Plugin.WorkRadius.Value;
         var radiusSqr = radius * radius;
@@ -263,11 +276,20 @@ internal sealed class PorterWorker : MonoBehaviour
         var containers = Object.FindObjectsOfType<Container>();
         var acceptedIds = new Dictionary<Container, HashSet<string>>();
 
+        var sources = new List<Container>();
         foreach (var candidateSource in containers)
         {
             if (!IsUsable(candidateSource) || !SourceContainerMarker.IsSource(candidateSource)) continue;
             if ((candidateSource.transform.position - _home).sqrMagnitude > radiusSqr) continue;
+            sources.Add(candidateSource);
+        }
 
+        sources.Sort((a, b) =>
+            (a.transform.position - transform.position).sqrMagnitude.CompareTo(
+                (b.transform.position - transform.position).sqrMagnitude));
+
+        foreach (var candidateSource in sources)
+        {
             var items = candidateSource.GetInventory()?.GetAllItems();
             if (items == null || items.Count == 0) continue;
 
@@ -288,7 +310,7 @@ internal sealed class PorterWorker : MonoBehaviour
             if (_cargo.Count == 0) continue;
 
             _source = candidateSource;
-            Plugin.Log.LogDebug($"Porter planned trip with {_cargo.Count}/{maxStacks} stack(s) from {candidateSource.name}.");
+            Plugin.Log.LogDebug($"Porter planned trip with {_cargo.Count}/{maxStacks} stack(s) from nearest source {candidateSource.name}.");
             return true;
         }
 
@@ -400,25 +422,81 @@ internal sealed class PorterWorker : MonoBehaviour
             _destinationCooldowns.Remove(container);
     }
 
-    private int FindNearestCargoIndex()
+    private Container FindNearestDestination()
     {
-        var bestIndex = -1;
+        Container best = null;
         var bestDistance = float.MaxValue;
 
-        for (var i = 0; i < _cargo.Count; ++i)
+        foreach (var entry in _cargo)
         {
-            var destination = _cargo[i].Destination;
+            var destination = entry.Destination;
             if (!IsUsable(destination)) continue;
 
             var distanceSqr = (transform.position - destination.transform.position).sqrMagnitude;
             if (distanceSqr < bestDistance)
             {
-                bestIndex = i;
+                best = destination;
                 bestDistance = distanceSqr;
             }
         }
 
-        return bestIndex;
+        return best;
+    }
+
+    private bool HasCargoForDestination(Container destination)
+    {
+        if (destination == null) return false;
+        for (var i = 0; i < _cargo.Count; ++i)
+        {
+            if (_cargo[i].Destination == destination)
+                return true;
+        }
+        return false;
+    }
+
+    private int FindCargoIndexForDestination(Container destination)
+    {
+        if (destination == null) return -1;
+        for (var i = 0; i < _cargo.Count; ++i)
+        {
+            if (_cargo[i].Destination == destination)
+                return i;
+        }
+        return -1;
+    }
+
+    private void CleanupDestinationCooldowns()
+    {
+        if (_destinationCooldowns.Count == 0) return;
+
+        var containersToRemove = new List<Container>();
+        foreach (var pair in _destinationCooldowns)
+        {
+            var container = pair.Key;
+            var itemCooldowns = pair.Value;
+
+            if (!container || itemCooldowns == null)
+            {
+                containersToRemove.Add(container);
+                continue;
+            }
+
+            var expiredItems = new List<string>();
+            foreach (var item in itemCooldowns)
+            {
+                if (Time.time >= item.Value)
+                    expiredItems.Add(item.Key);
+            }
+
+            foreach (var itemId in expiredItems)
+                itemCooldowns.Remove(itemId);
+
+            if (itemCooldowns.Count == 0)
+                containersToRemove.Add(container);
+        }
+
+        foreach (var container in containersToRemove)
+            _destinationCooldowns.Remove(container);
     }
 
     private bool MoveTowards(Vector3 point, float stopDistance, out bool stuck)
@@ -527,6 +605,7 @@ internal sealed class PorterWorker : MonoBehaviour
         _cargo.Clear();
         _nextTransferTime = 0f;
         _activeTripCapacity = 0;
+        _activeDestination = null;
         ResetOwnershipWait();
     }
 }
