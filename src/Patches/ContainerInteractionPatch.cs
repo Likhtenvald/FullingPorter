@@ -27,3 +27,16 @@ internal static class ContainerInteractionPatch
             enabled ? "$fullingporter_source_enabled" : "$fullingporter_source_disabled");
     }
 }
+
+
+[HarmonyPatch(typeof(Container), nameof(Container.GetHoverText))]
+internal static class ContainerHoverTextPatch
+{
+    private static void Postfix(Container __instance, ref string __result)
+    {
+        if (!SourceContainerMarker.IsSource(__instance))
+            return;
+
+        __result += "\n<color=yellow>$fullingporter_source_hover</color>";
+    }
+}
