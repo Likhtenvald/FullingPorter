@@ -4,8 +4,11 @@ namespace FullingPorter.Porter;
 
 internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextReceiver
 {
+    private const float DismissConfirmSeconds = 3f;
+
     private PorterState _state;
     private ZNetView _view;
+    private float _dismissConfirmUntil;
 
     private void Awake()
     {
@@ -13,15 +16,29 @@ internal sealed class PorterInteraction : MonoBehaviour, Interactable, TextRecei
         _view = GetComponent<ZNetView>();
     }
 
+    private void Update()
+    {
+        var player = Player.m_localPlayer;
+        if (player == null || Plugin.DismissKey == null || !Input.GetKeyDown(Plugin.DismissKey.Value))
+            return;
+
+        var hover = player.GetHoverObject();
+        if (hover == null || hover.GetComponentInParent<PorterInteraction>() != this)
+            return;
+
+        if (Time.time <= _dismissConfirmUntil)
+        {
+            Dismiss(player);
+            return;
+        }
+
+        _dismissConfirmUntil = Time.time + DismissConfirmSeconds;
+        player.Message(MessageHud.MessageType.Center, "$fullingporter_dismiss_confirm");
+    }
+
     public bool Interact(Humanoid character, bool hold, bool alt)
     {
         if (hold || character != Player.m_localPlayer) return false;
-
-        if (alt)
-        {
-            Dismiss(character);
-            return true;
-        }
 
         TextInput.instance.RequestText(this, "$fullingporter_rename_title", 24);
         return true;
