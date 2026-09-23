@@ -8,32 +8,39 @@ namespace FullingPorter.Storage;
 /// </summary>
 internal static class TransferService
 {
-    internal static bool TryMoveWholeStack(Container source, Container destination, ItemDrop.ItemData item)
+    internal enum TransferResult
     {
-        if (!source || !destination || item == null || source == destination) return false;
-        if (ZNet.instance == null || !ZNet.instance.IsServer()) return false;
+        Success,
+        WaitingForOwnership,
+        Failed
+    }
+
+    internal static TransferResult TryMoveWholeStack(Container source, Container destination, ItemDrop.ItemData item)
+    {
+        if (!source || !destination || item == null || source == destination) return TransferResult.Failed;
+        if (ZNet.instance == null || !ZNet.instance.IsServer()) return TransferResult.Failed;
 
         var sourceView = source.GetComponent<ZNetView>();
         var destinationView = destination.GetComponent<ZNetView>();
         if (sourceView == null || destinationView == null || !sourceView.IsValid() || !destinationView.IsValid())
-            return false;
+            return TransferResult.Failed;
 
         if (!sourceView.IsOwner()) sourceView.ClaimOwnership();
         if (!destinationView.IsOwner()) destinationView.ClaimOwnership();
         if (!sourceView.IsOwner() || !destinationView.IsOwner())
-            return false;
+            return TransferResult.WaitingForOwnership;
 
         var sourceInventory = source.GetInventory();
         var destinationInventory = destination.GetInventory();
-        if (sourceInventory == null || destinationInventory == null) return false;
-        if (!sourceInventory.ContainsItem(item)) return false;
-        if (!QuickStackPlusBridge.Accepts(destination, item)) return false;
-        if (!destinationInventory.CanAddItem(item, -1)) return false;
+        if (sourceInventory == null || destinationInventory == null) return TransferResult.Failed;
+        if (!sourceInventory.ContainsItem(item)) return TransferResult.Failed;
+        if (!QuickStackPlusBridge.Accepts(destination, item)) return TransferResult.Failed;
+        if (!destinationInventory.CanAddItem(item, -1)) return TransferResult.Failed;
 
         // Inventory.AddItem(ItemData) clones/moves the stack into the destination.
         // Remove only after AddItem reports success.
-        if (!destinationInventory.AddItem(item)) return false;
+        if (!destinationInventory.AddItem(item)) return TransferResult.Failed;
         sourceInventory.RemoveItem(item);
-        return true;
+        return TransferResult.Success;
     }
 }
