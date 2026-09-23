@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace FullingPorter.Porter;
@@ -58,29 +57,18 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
         if (_serverActive != null)
             return true;
 
-        // Reconcile the convenience global key against the persistent ZDO set.
-        // This also sees porters in unloaded zones, unlike FindObjectsOfType.
-        if (ZDOMan.instance != null)
-        {
-            var zdos = new List<ZDO>();
-            ZDOMan.instance.GetAllZDOsWithPrefab(PorterPrefabRegistry.PrefabName, zdos);
-
-            if (zdos.Count > 0)
-            {
-                MarkWorldOccupied();
-                return true;
-            }
-
-            ClearWorldOccupied();
-            return false;
-        }
-
         foreach (var porter in Object.FindObjectsOfType<PorterState>())
         {
-            if (porter != null)
-                return true;
+            if (porter == null) continue;
+
+            _serverActive = porter;
+            MarkWorldOccupied();
+            return true;
         }
 
+        // On this Valheim build there is no public ZDOMan API for enumerating
+        // unloaded instances by prefab, so avoid pretending we can prove their
+        // absence. Keep an existing world key as the conservative fallback.
         return ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(WorldPresenceKey);
     }
 
