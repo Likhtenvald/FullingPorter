@@ -8,6 +8,11 @@ namespace FullingPorter.Porter;
 /// </summary>
 internal sealed class PorterMovementAI : BaseAI
 {
+    private void Awake()
+    {
+        m_pathAgentType = Pathfinding.AgentType.Humanoid;
+    }
+
     internal void WalkTo(Vector3 point, float stopDistance)
     {
         MoveTo(Time.deltaTime, point, stopDistance, false);
