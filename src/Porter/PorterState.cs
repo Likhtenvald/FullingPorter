@@ -197,13 +197,26 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
             if (_view == null || !_view.IsValid()) return DefaultName;
             return _view.GetZDO().GetString(NameKey, DefaultName);
         }
-        set
-        {
-            if (_view == null || !_view.IsValid()) return;
-            if (!_view.IsOwner()) _view.ClaimOwnership();
-            _view.GetZDO().Set(NameKey, string.IsNullOrWhiteSpace(value) ? DefaultName : value.Trim());
-            ApplyDisplayName();
-        }
+        set => SetNameServer(value);
+    }
+
+    internal bool SetNameServer(string value)
+    {
+        if (ZNet.instance == null || !ZNet.instance.IsServer() || _view == null || !_view.IsValid())
+            return false;
+
+        if (!_view.IsOwner())
+            _view.ClaimOwnership();
+        if (!_view.IsOwner())
+            return false;
+
+        var zdo = _view.GetZDO();
+        if (zdo == null)
+            return false;
+
+        zdo.Set(NameKey, string.IsNullOrWhiteSpace(value) ? DefaultName : value.Trim());
+        ApplyDisplayName();
+        return true;
     }
 
     private void ApplyDisplayName()
