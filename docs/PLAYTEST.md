@@ -160,3 +160,18 @@ This is a release-blocking anti-duplication test.
 9. Repeat with several different item types routed into the same Smart Storage chest.
 
 Expected result: an open source or destination chest pauses the porter. A chest cannot be newly opened during the porter's transfer lock. Total item count remains constant.
+
+
+## Multiplayer regression: server config synchronization
+
+1. On the host/server, set Contract.Price to a distinctive value such as 1777.
+2. On the remote client, set Contract.Price to a different local value such as 999 before joining.
+3. Also give WorkRadius and MaxStacksPerTrip different values on the two machines.
+4. Start the world on the host and join from the remote client.
+5. Open Haldor's store on both machines.
+6. Verify the Fuling Porter Contract price is the server value on both machines.
+7. Verify porter work radius and trip capacity follow the server values, not the remote client's local file.
+8. Disconnect the client and verify its local config values are restored outside the server session.
+9. Verify DismissKey, RenameKey, and SourceChestKey remain local per-client settings.
+
+Expected result: gameplay settings are synchronized and locked to the server while connected; input bindings remain local.
