@@ -22,8 +22,6 @@ internal static class TransferService
         // Remove only after AddItem reports success.
         if (!destinationInventory.AddItem(item)) return false;
         sourceInventory.RemoveItem(item);
-        source.Save();
-        destination.Save();
         return true;
     }
 }
