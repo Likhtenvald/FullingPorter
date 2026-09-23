@@ -27,7 +27,7 @@ internal static class HaldorTradePatch
             m_prefab = drop,
             m_stack = 1,
             m_price = Plugin.ContractPrice.Value,
-            m_requiredGlobalKey = string.Empty
+            m_requiredGlobalKey = null
         });
     }
 }
