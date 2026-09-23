@@ -36,6 +36,10 @@ public sealed class Plugin : BaseUnityPlugin
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
 
+        // Register translations during plugin startup, before Valheim/Jotunn
+        // finishes setting up the active language. Prefab registration stays
+        // on OnVanillaPrefabsAvailable because it depends on vanilla prefabs.
+        LocalizationRegistry.Register();
         PrefabManager.OnVanillaPrefabsAvailable += OnVanillaPrefabsAvailable;
         Logger.LogInfo($"{PluginName} {PluginVersion} loaded.");
     }
@@ -47,7 +51,6 @@ public sealed class Plugin : BaseUnityPlugin
 
     private void OnVanillaPrefabsAvailable()
     {
-        LocalizationRegistry.Register();
         Contract.ContractRegistry.Register();
         Porter.PorterPrefabRegistry.Register();
         PrefabManager.OnVanillaPrefabsAvailable -= OnVanillaPrefabsAvailable;
