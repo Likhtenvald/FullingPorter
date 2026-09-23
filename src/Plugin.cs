@@ -22,7 +22,6 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<int> ContractPrice;
     internal static ConfigEntry<float> WorkRadius;
     internal static ConfigEntry<int> MaxStacksPerTrip;
-    internal static ConfigEntry<bool> PorterCanDie;
     internal static ConfigEntry<KeyCode> DismissKey;
     internal static ConfigEntry<KeyCode> SourceChestKey;
 
@@ -34,7 +33,6 @@ public sealed class Plugin : BaseUnityPlugin
         ContractPrice = Config.Bind("Contract", "Price", 10, "Haldor contract price in coins.");
         WorkRadius = Config.Bind("Porter", "WorkRadius", 30f, "Maximum work radius in metres.");
         MaxStacksPerTrip = Config.Bind("Porter", "MaxStacksPerTrip", 12, "Maximum distinct stacks carried per trip.");
-        PorterCanDie = Config.Bind("Porter", "CanDie", true, "Whether the porter can take lethal damage.");
         DismissKey = Config.Bind("Porter", "DismissKey", KeyCode.Delete, "Key used while looking at a porter to dismiss it. Press twice to confirm.");
         SourceChestKey = Config.Bind("Porter", "SourceChestKey", KeyCode.Home, "Key used while looking at a container to toggle it as a porter source.");
 
