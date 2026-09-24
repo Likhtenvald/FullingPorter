@@ -4,7 +4,7 @@ Hire a friendly Fuling from Haldor to move stacks from the chests you mark as so
 
 ## Install
 
-Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.2 for this beta).
+Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.3 for this beta).
 
 For manual installation, install BepInExPack Valheim, Jotunn and QuickStackPlus first, then place `FullingPorter.dll` in `BepInEx/plugins/FullingPorter/` on the host and every client.
 
@@ -21,6 +21,6 @@ The host controls contract price, work radius and trip capacity. Key bindings st
 
 ## Beta testing
 
-The previous 0.1.1 beta passed singleplayer and two-PC host/client tests for transfers, shared settings, activity status and version mismatch handling. Dialogue synchronization in 0.1.2 still needs a two-PC check. Dedicated servers and migration from older saved worlds have not yet been verified. Back up valuable worlds before beta testing.
+Earlier host/client tests covered transfers, shared settings, activity status and version mismatch handling. In a local host test of 0.1.3, the porter finished four trips and transferred ten stacks while source and destination chests were opened during delivery. Repeat the chest-access and synchronized-dialogue checks with a remote client. Dedicated servers and migration from older saved worlds have not yet been verified. Back up valuable worlds before beta testing.
 
 Please report bugs at [GitHub Issues](https://github.com/Likhtenvald/FullingPorter/issues). Include the mod version, host/client setup, steps to reproduce, item counts before and after a transfer, and `BepInEx/LogOutput.log` from the host when relevant.
