@@ -2,7 +2,7 @@
 
 Use a disposable world for development tests.
 
-Host and remote-client tests on two PCs were reported passing on 2026-09-23 after the transfer, config and activity-status fixes, including the FullingPorter 0.1.1 version gate. The checklist below remains the regression gate for future builds; dedicated-server compatibility has not yet been confirmed.
+Host and remote-client tests on two PCs were reported passing on 2026-09-23 after the transfer, config and activity-status fixes. A local host tested 0.1.3 on 2026-09-24: four complete trips, ten moved stacks, and delivery resumed after source and destination chests were closed. Repeat the chest-access regression with a remote client; dedicated-server compatibility has not yet been confirmed.
 
 ## Build gate
 
@@ -90,7 +90,7 @@ Expected ownership behavior:
 
 ## Multiplayer gate
 
-Run host + one client with identical FullingPorter 0.1.2 builds. Check cargo, synced config and activity on both PCs after a version upgrade.
+Run host + one client with identical FullingPorter 0.1.3 builds. Check cargo, synced config and activity on both PCs after a version upgrade.
 
 1. Host buys/uses contract.
 2. Client sees the same porter, name, position and movement.
@@ -111,7 +111,7 @@ Run host + one client with identical FullingPorter 0.1.2 builds. Check cargo, sy
 
 ## Multiplayer regression: synchronized porter dialogue (0.1.2)
 
-1. Install 0.1.2 on the host and remote client, stand both players near the porter, and press E on the host. Confirm both see the same line and hear the same voice variant exactly once.
+1. Install 0.1.3 on the host and remote client, stand both players near the porter, and press E on the host. Confirm both see the same line and hear the same voice variant exactly once.
 2. Press E on the remote client and confirm both see the same line and hear the same voice variant exactly once. Repeat while the porter is working or returning.
 3. Leave both players near the porter until it speaks on its own. Confirm each ambient line and voice matches on both PCs with no duplicate bubbles or overlapping spam.
 4. Move the host more than 20 m away while the client stays nearby. Confirm the client's manual dialogue still works and the host does not see a distant speech bubble.
@@ -162,7 +162,7 @@ Expected result: every remote action is attributed to the real inbound peer, pro
 
 ## Multiplayer regression: open chest during porter transfer
 
-This is a release-blocking anti-duplication test.
+This is the multiplayer anti-duplication regression gate; 0.1.3 has passed the local-host variant, and the remote-client variant remains to be checked.
 
 1. Host a world on one PC and connect a second PC as a remote client.
 2. Put several identifiable stacks into a marked source chest and configure a Smart Storage destination with enough free space.
@@ -173,8 +173,11 @@ This is a release-blocking anti-duplication test.
 7. Repeatedly try to open either chest during the short transfer moment and verify the porter transfer lock blocks opening until the transaction finishes.
 8. After every variant, count source + destination totals and verify no item was duplicated or lost.
 9. Repeat with several different item types routed into the same Smart Storage chest.
+10. Hold the source chest open for 10-15 seconds during delivery, then close it. Confirm the porter transfers the pending stack, completes the trip and returns home. Repeat while holding the destination chest open.
+11. Immediately start another trip with new stacks. Confirm that the previous wait does not cause an immediate timeout or prevent delivery.
+12. Hold either chest open for over 30 seconds while the porter is delivering. Confirm it aborts that trip, releases its locks and returns home; after closing the chest, confirm a later trip can proceed.
 
-Expected result: an open source or destination chest pauses the porter. A chest cannot be newly opened during the porter's transfer lock. Total item count remains constant.
+Expected result: an open source or destination chest pauses the porter without changing item counts. The 30-second player wait and the 5-second porter-lock wait are independent, and both timers reset between trips. A chest cannot be newly opened during the porter's transfer lock. Total item count remains constant. The host log records source and destination ZDO IDs and lock states when waiting for porter-lock access; a player-held chest timeout logs the item and return home.
 
 
 ## Multiplayer regression: server config synchronization
@@ -192,11 +195,11 @@ Expected result: contract price, work radius, and trip capacity follow the serve
 
 ## Multiplayer regression: FullingPorter version gate
 
-1. Install 0.1.2 on both host and remote client; verify connection succeeds and normal porter actions work.
+1. Install 0.1.3 on both host and remote client; verify connection succeeds and normal porter actions work.
 2. Remove FullingPorter from the remote client while leaving Jötunn installed; verify connection is refused with a mod compatibility error.
 3. Restore FullingPorter on the client and remove it from the host; verify connection is refused.
-4. Put 0.1.1 on the client and 0.1.2 on the host; verify connection is refused. Reverse the versions and repeat.
-5. Restore 0.1.2 on both sides; verify connection works again and the contract, config and activity status still synchronize.
+4. Put 0.1.2 on the client and 0.1.3 on the host; verify connection is refused. Reverse the versions and repeat.
+5. Restore 0.1.3 on both sides; verify connection works again and the contract, config and activity status still synchronize.
 6. Repeat the missing-mod and mismatched-version cases on a dedicated server before release.
 
-Expected result: both sides need FullingPorter, with matching major, minor and patch versions. Ensure each newly built DLL has an incremented declared version; the check cannot distinguish two different binaries both labeled 0.1.2.
+Expected result: both sides need FullingPorter, with matching major, minor and patch versions. Ensure each newly built DLL has an incremented declared version; the check cannot distinguish two different binaries labeled with the same version.
