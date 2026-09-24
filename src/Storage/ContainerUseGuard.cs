@@ -52,13 +52,31 @@ internal static class ContainerUseGuard
         if (HeldLocks.Contains(zdo.m_uid))
             return true;
 
+        // A persisted lock without a matching server-side holder is stale.
+        // No transfer can be in progress in this process unless it is in HeldLocks.
         if (zdo.GetBool(PorterLockKey, false))
-            return false;
+        {
+            Plugin.Log.LogWarning($"Clearing orphaned porter lock on container {zdo.m_uid}.");
+            zdo.Set(PorterLockKey, false);
+        }
 
         zdo.Set(PorterLockKey, true);
         HeldLocks.Add(zdo.m_uid);
         newlyAcquired = true;
         return true;
+    }
+
+    internal static string DescribeState(Container container)
+    {
+        var view = container ? container.GetComponent<ZNetView>() : null;
+        var zdo = view != null && view.IsValid() ? view.GetZDO() : null;
+        if (zdo == null)
+            return "unavailable";
+
+        return $"id={zdo.m_uid}, localInUse={container.IsInUse()}, " +
+               $"networkInUse={zdo.GetInt(ZDOVars.s_inUse, 0)}, " +
+               $"porterLocked={zdo.GetBool(PorterLockKey, false)}, " +
+               $"serverHeld={HeldLocks.Contains(zdo.m_uid)}";
     }
 
     internal static void Release(Container container)
