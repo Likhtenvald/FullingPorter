@@ -3,7 +3,8 @@
 ## 0.1.3 - development
 
 - Recover from orphaned porter chest locks and release locks while waiting for container access.
-- End a blocked trip after five seconds and record both chest states for diagnosis.
+- End a porter lock wait after five seconds, or a player-held chest wait after thirty seconds, and record chest states for diagnosis.
+- Reset wait timers after each trip so an interrupted delivery does not abort later trips.
 
 ## 0.1.2 - beta
 
