@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 - development
+
+- Recover from orphaned porter chest locks and release locks while waiting for container access.
+- End a blocked trip after five seconds and record both chest states for diagnosis.
+
 ## 0.1.2 - beta
 
 - Synchronized manual and ambient porter dialogue and voice between nearby players.
