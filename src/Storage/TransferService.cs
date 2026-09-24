@@ -26,7 +26,11 @@ internal static class TransferService
         if (ZNet.instance == null || !ZNet.instance.IsServer()) return TransferResult.Failed;
 
         if (ContainerUseGuard.IsPlayerBusy(source) || ContainerUseGuard.IsPlayerBusy(destination))
+        {
+            ContainerUseGuard.Release(destination);
+            ContainerUseGuard.Release(source);
             return TransferResult.ContainerBusy;
+        }
 
         var sourceView = source.GetComponent<ZNetView>();
         var destinationView = destination.GetComponent<ZNetView>();
@@ -37,10 +41,15 @@ internal static class TransferService
         var destinationNewLock = false;
 
         if (!ContainerUseGuard.TryAcquire(source, out sourceNewLock))
+        {
+            ContainerUseGuard.Release(destination);
+            ContainerUseGuard.Release(source);
             return TransferResult.ContainerBusy;
+        }
 
         if (!ContainerUseGuard.TryAcquire(destination, out destinationNewLock))
         {
+            ContainerUseGuard.Release(destination);
             ContainerUseGuard.Release(source);
             return TransferResult.ContainerBusy;
         }
