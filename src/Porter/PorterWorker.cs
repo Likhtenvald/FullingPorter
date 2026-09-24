@@ -32,6 +32,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private int _activeTripCapacity;
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
+    private float _containerBusySince = -1f;
     private Container _activeDestination;
     private bool _returningFromWork;
     private float _blockedStatusUntil;
@@ -49,6 +50,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private const float DestinationRetryCooldown = 8f;
     private const float BlockedDialogueDuration = 20f;
     private const float OwnershipWaitTimeout = 3f;
+    private const float ContainerBusyTimeout = 5f;
     private const int MaxTransferFailures = 3;
     private const float TransferFailureRetryDelay = 0.3f;
 
@@ -196,7 +198,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (ContainerUseGuard.IsPlayerBusy(_source) || ContainerUseGuard.IsPlayerBusy(entry.Destination))
         {
-            _nextTransferTime = Time.time + TransferFailureRetryDelay;
+            WaitForBusyContainer(entry);
             return;
         }
 
@@ -222,12 +224,11 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (transferResult == TransferService.TransferResult.ContainerBusy)
         {
-            ResetOwnershipWait();
-            _nextTransferTime = Time.time + TransferFailureRetryDelay;
-            Plugin.Log.LogDebug($"Porter waiting for player to close a container for {DescribeItem(entry.Item)}.");
+            WaitForBusyContainer(entry);
             return;
         }
 
+        ResetContainerBusyWait();
         if (transferResult == TransferService.TransferResult.WaitingForOwnership)
         {
             if (_ownershipWaitItem != entry.Item)
@@ -598,6 +599,7 @@ internal sealed class PorterWorker : MonoBehaviour
         // container, that container may be selected again.
         _activeDestination = null;
         ResetOwnershipWait();
+        ResetContainerBusyWait();
 
         if (_cargo.Count == 0)
             FinishBatch();
@@ -773,6 +775,38 @@ internal sealed class PorterWorker : MonoBehaviour
         var name = item.m_dropPrefab != null ? item.m_dropPrefab.name : item.m_shared?.m_name ?? "<unknown>";
         return $"{name} x{item.m_stack}";
     }
+
+    private void WaitForBusyContainer(CargoEntry entry)
+    {
+        if (_containerBusySince < 0f)
+        {
+            _containerBusySince = Time.time;
+            Plugin.Log.LogWarning(
+                $"Porter waiting for container access for {DescribeItem(entry.Item)}; " +
+                $"source [{ContainerUseGuard.DescribeState(_source)}], " +
+                $"destination [{ContainerUseGuard.DescribeState(entry.Destination)}].");
+        }
+
+        // No inventory is being mutated while waiting. Give players access to
+        // both containers and reacquire the locks on the next transfer attempt.
+        ContainerUseGuard.Release(entry.Destination);
+        ContainerUseGuard.Release(_source);
+        ResetOwnershipWait();
+
+        if (Time.time - _containerBusySince >= ContainerBusyTimeout)
+        {
+            Plugin.Log.LogWarning(
+                $"Porter container wait timed out for {DescribeItem(entry.Item)}; " +
+                $"source [{ContainerUseGuard.DescribeState(_source)}], " +
+                $"destination [{ContainerUseGuard.DescribeState(entry.Destination)}]. Returning home.");
+            AbortBatch();
+            return;
+        }
+
+        _nextTransferTime = Time.time + TransferFailureRetryDelay;
+    }
+
+    private void ResetContainerBusyWait() => _containerBusySince = -1f;
 
     private void ResetOwnershipWait()
     {
