@@ -24,13 +24,14 @@ No source item is removed unless destination insertion succeeds.
 
 A transfer result distinguishes:
 - success;
+- a container currently in use or unavailable for a porter lock;
 - waiting for container ownership;
 - source item no longer available;
 - destination no longer accepts the item;
 - destination full;
 - other failure.
 
-Ownership waits have a 3-second timeout. Only a genuinely full destination starts the destination/item cooldown. Cooldown entries expire after 8 seconds and stale container/item entries are cleaned before planning a new batch.
+Ownership waits have a 3-second timeout. During delivery, a source or destination opened by a player pauses the trip for up to 30 seconds; the worker releases any porter locks during this wait and resumes after the chest closes. A porter lock that cannot be acquired has a separate 5-second timeout. When either container wait expires, the worker releases its locks, ends the batch and returns home. Lock and player-wait timers reset between trips; a server-side lock flag with no matching server-side holder is treated as orphaned and cleared before a new attempt. These waits do not start the destination cooldown. Only a genuinely full destination starts the destination/item cooldown. Cooldown entries expire after 8 seconds and stale container/item entries are cleaned before planning a new batch.
 
 ## Porter identity and one-per-world invariant
 
@@ -92,7 +93,7 @@ Haldor sells one injected Fuling Porter Contract trade at the configured price, 
 ## Remaining release gates
 
 - Compile against the tester's current Valheim/Jötunn assemblies after every API-sensitive change.
-- Singleplayer and host/client smoke tests were reported as passing on two PCs on 2026-09-23; repeat after network-related changes.
+- Singleplayer and host/client smoke tests were reported as passing on two PCs on 2026-09-23. Local-host 0.1.3 testing on 2026-09-24 covered four completed trips with open-chest interruptions; repeat the chest-lock scenario with a remote client after network-related changes.
 - Host/client RPC race tests, especially simultaneous contract use.
 - Host/client FullingPorter version-compatibility tests were reported passing on 2026-09-23; repeat the missing-mod and mismatch cases on a dedicated server.
 - Reconnect and world restart persistence tests.
