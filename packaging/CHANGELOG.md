@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.3 - development
+## 0.1.3 - beta
 
 - Recover from orphaned porter chest locks and release locks while waiting for container access.
 - End a porter lock wait after five seconds, or a player-held chest wait after thirty seconds, and record chest states for diagnosis.
