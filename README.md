@@ -1,31 +1,91 @@
 # FullingPorter
 
-A Valheim logistics mod that adds a friendly Fuling porter hired with a contract from Haldor.
+A Valheim logistics mod that adds a friendly Fuling porter hired from Haldor. The porter moves items from player-selected source containers into QuickStackPlus Smart Storage without introducing a second destination-filter system.
 
-## Goals
-- Buy a Fuling Porter Contract from Haldor.
-- Spawn a persistent, renameable, non-aggressive porter at your base.
-- Mark source containers for the porter.
-- Route items into organized storage using QuickStackPlus Smart Storage filters.
-- Multiplayer-safe, server-authoritative item transfers.
+## Current behavior
 
-## Status
-Early development (0.1.0). The initial milestone establishes the plugin, configuration, QuickStackPlus Smart Storage bridge, and porter state/AI scaffolding.
+- Buy a **Fuling Porter Contract** from Haldor for **1500 coins**.
+- Use the contract to request a server-authoritative porter spawn.
+- Exactly **one porter per world** is allowed.
+- The porter is a normal friendly Fuling and is always immortal.
+- Default work radius: **30 m** from the porter's persistent home position.
+- Default carrying capacity: **10 distinct stacks per trip**.
+- The nearest usable source is selected first.
+- Cargo for the same destination is grouped before moving to another destination.
+- Full Smart Storage targets are temporarily cooled down instead of being retried continuously.
+- Item transfers are server-authoritative and remove from source only after destination insertion succeeds.
+- An open source or destination chest pauses delivery; the porter releases its transfer locks while waiting and resumes once the chest closes. If access stays blocked, it ends the current trip and returns home.
+- The porter returns to its persistent home after a trip.
 
-## Requirements
-- Valheim 1.0.x
-- BepInExPack Valheim 5.4.2350+
-- Jotunn 2.30.2+
-- QuickStackPlus 1.2.0+
-- ConditionalConfigSync 1.0.5+ (QuickStackPlus dependency)
+## Controls
+
+All keys are configurable in the BepInEx config.
+
+| Action | Default |
+| --- | --- |
+| Toggle hovered container as porter source | `Home` |
+| Talk/react with hovered porter | `E` |
+| Rename hovered porter | `End` |
+| Dismiss hovered porter | `Delete` twice within 3 seconds |
+
+The porter hover UI shows only its name and current activity status. Pressing `E` makes the porter react with contextual banter and a vanilla Fuling vocalization, visible and audible to nearby players; it does not open a menu or change logistics. Dialogue has a short anti-spam cooldown and varies for idle, working, returning and blocked/full-storage states.
 
 ## QuickStackPlus integration
-QuickStackPlus stores Smart Storage selections in the container ZDO under:
+
+QuickStackPlus Smart Storage remains the destination source of truth.
+
+QuickStackPlus 1.2.0 stores selected item prefab IDs in the container ZDO key:
+
 `Goneryx.QuickStackPlus.StorageFilter`
 
-Values are item IDs separated by U+001F. FullingPorter reads this existing data directly and does not maintain a competing storage-filter system.
+Values are separated by U+001F. FullingPorter reads that existing data and does not maintain its own storage-filter configuration.
+
+A container marked as a porter source is not considered a destination during that scan.
+
+## Networking and persistence
+
+Porter work and inventory transfers execute on the server. Player actions that mutate world state — spawning, source toggling, renaming and dismissal — are sent through a Jötunn RPC to the server. The server validates dialogue requests, chooses each line and voice, and sends the same event to nearby clients.
+
+The one-porter invariant is persisted with a world global key containing the porter's ZDOID. This lets the server distinguish a real unloaded porter from a stale key left by a deleted object.
+
+The porter's name, home position, activity status and dialogue context are stored in its ZDO. Clients display the server's current activity and remaining stack count. Source markers are stored on the source container ZDO.
+
+The server checks that every joining client has FullingPorter **0.1.3**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
+
+## Configuration defaults
+
+- `Contract.Price = 1500`
+- `Porter.WorkRadius = 30`
+- `Porter.MaxStacksPerTrip = 10`
+- `Porter.SourceChestKey = Home`
+- `Porter.RenameKey = End`
+- `Porter.DismissKey = Delete`
+
+The server synchronizes price, work radius and trip capacity to clients. Input keys remain local. Client values return after disconnecting.
+
+Older development configs may still contain obsolete entries such as `CanDie`; they are ignored by current code. Existing config values are not overwritten when defaults change.
+
+## Requirements
+
+- Current Valheim build used by the tester
+- BepInExPack Valheim 5.4.2350+
+- Jötunn 2.30.2+
+- QuickStackPlus 1.2.0+
+- ConditionalConfigSync 1.0.5+ through QuickStackPlus
 
 ## Development
-Set `VALHEIM_MANAGED` to Valheim's `valheim_Data/Managed` directory and `BEPINEX_CORE` to `BepInEx/core`, then build the project.
 
-See [docs/DESIGN.md](docs/DESIGN.md) for architecture and milestones.
+The safest local workflow is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+```
+
+This builds against the installed Valheim/Jötunn assemblies and installs the DLL into the configured Thunderstore profile.
+
+See:
+- [docs/DESIGN.md](docs/DESIGN.md) for architecture.
+- [docs/PLAYTEST.md](docs/PLAYTEST.md) for the current test matrix.
+- [docs/BUILD.md](docs/BUILD.md) for local build and Thunderstore/r2modman packaging details.
+
+Host and remote-client tests on two PCs passed on 2026-09-23 for cargo transfers, server config, activity status and version compatibility. A local host test of 0.1.3 on 2026-09-24 completed four trips and transferred ten stacks, including source and destination chest access while the porter was delivering. The 0.1.3 chest-lock change still needs a repeat with a remote client; dedicated-server and long-term save migration tests remain open. Back up valuable worlds before beta testing.
