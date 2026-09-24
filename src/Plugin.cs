@@ -18,7 +18,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "Likhtenvald.FullingPorter";
     public const string PluginName = "FullingPorter";
-    public const string PluginVersion = "0.1.2";
+    public const string PluginVersion = "0.1.3";
     public const string QuickStackPlusGuid = "Goneryx.QuickStackPlus";
 
     internal static BepInEx.Logging.ManualLogSource Log;
