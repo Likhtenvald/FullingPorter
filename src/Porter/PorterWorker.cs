@@ -33,6 +33,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private ItemDrop.ItemData _ownershipWaitItem;
     private float _ownershipWaitSince;
     private float _containerBusySince = -1f;
+    private float _playerBusySince = -1f;
     private Container _activeDestination;
     private bool _returningFromWork;
     private float _blockedStatusUntil;
@@ -51,6 +52,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private const float BlockedDialogueDuration = 20f;
     private const float OwnershipWaitTimeout = 3f;
     private const float ContainerBusyTimeout = 5f;
+    private const float PlayerBusyTimeout = 30f;
     private const int MaxTransferFailures = 3;
     private const float TransferFailureRetryDelay = 0.3f;
 
@@ -198,9 +200,11 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (ContainerUseGuard.IsPlayerBusy(_source) || ContainerUseGuard.IsPlayerBusy(entry.Destination))
         {
-            WaitForBusyContainer(entry);
+            WaitForPlayerContainer(entry);
             return;
         }
+
+        ResetPlayerBusyWait();
 
         if (!MoveTowards(entry.Destination.transform.position, InteractionDistance, out var stuckAtDestination))
         {
@@ -224,7 +228,10 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (transferResult == TransferService.TransferResult.ContainerBusy)
         {
-            WaitForBusyContainer(entry);
+            if (ContainerUseGuard.IsPlayerBusy(_source) || ContainerUseGuard.IsPlayerBusy(entry.Destination))
+                WaitForPlayerContainer(entry);
+            else
+                WaitForBusyContainer(entry);
             return;
         }
 
@@ -259,6 +266,7 @@ internal sealed class PorterWorker : MonoBehaviour
 
         ResetOwnershipWait();
         ResetContainerBusyWait();
+        ResetPlayerBusyWait();
 
         if (transferResult == TransferService.TransferResult.Success)
         {
@@ -610,6 +618,7 @@ internal sealed class PorterWorker : MonoBehaviour
         _activeDestination = null;
         ResetOwnershipWait();
         ResetContainerBusyWait();
+        ResetPlayerBusyWait();
 
         if (_cargo.Count == 0)
             FinishBatch();
@@ -786,6 +795,33 @@ internal sealed class PorterWorker : MonoBehaviour
         return $"{name} x{item.m_stack}";
     }
 
+    private void WaitForPlayerContainer(CargoEntry entry)
+    {
+        if (_playerBusySince < 0f)
+        {
+            _playerBusySince = Time.time;
+            Plugin.Log.LogDebug(
+                $"Porter waiting for player to close a container for {DescribeItem(entry.Item)}; " +
+                $"source [{ContainerUseGuard.DescribeState(_source)}], " +
+                $"destination [{ContainerUseGuard.DescribeState(entry.Destination)}].");
+        }
+
+        ContainerUseGuard.Release(entry.Destination);
+        ContainerUseGuard.Release(_source);
+        ResetOwnershipWait();
+        ResetContainerBusyWait();
+
+        if (Time.time - _playerBusySince >= PlayerBusyTimeout)
+        {
+            Plugin.Log.LogWarning(
+                $"Porter player container wait timed out for {DescribeItem(entry.Item)}; returning home.");
+            AbortBatch();
+            return;
+        }
+
+        _nextTransferTime = Time.time + TransferFailureRetryDelay;
+    }
+
     private void WaitForBusyContainer(CargoEntry entry)
     {
         if (_containerBusySince < 0f)
@@ -818,6 +854,8 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void ResetContainerBusyWait() => _containerBusySince = -1f;
 
+    private void ResetPlayerBusyWait() => _playerBusySince = -1f;
+
     private void ResetOwnershipWait()
     {
         _ownershipWaitItem = null;
@@ -839,5 +877,7 @@ internal sealed class PorterWorker : MonoBehaviour
         _activeTripCapacity = 0;
         _activeDestination = null;
         ResetOwnershipWait();
+        ResetContainerBusyWait();
+        ResetPlayerBusyWait();
     }
 }
