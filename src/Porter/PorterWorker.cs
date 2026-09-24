@@ -228,9 +228,18 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        ResetContainerBusyWait();
         if (transferResult == TransferService.TransferResult.WaitingForOwnership)
         {
+            if (_containerBusySince >= 0f && Time.time - _containerBusySince >= ContainerBusyTimeout)
+            {
+                Plugin.Log.LogWarning(
+                    $"Porter container access did not stabilize for {DescribeItem(entry.Item)}; " +
+                    $"source [{ContainerUseGuard.DescribeState(_source)}], " +
+                    $"destination [{ContainerUseGuard.DescribeState(entry.Destination)}]. Returning home.");
+                AbortBatch();
+                return;
+            }
+
             if (_ownershipWaitItem != entry.Item)
             {
                 _ownershipWaitItem = entry.Item;
@@ -249,6 +258,7 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         ResetOwnershipWait();
+        ResetContainerBusyWait();
 
         if (transferResult == TransferService.TransferResult.Success)
         {
