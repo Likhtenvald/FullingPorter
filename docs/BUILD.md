@@ -53,7 +53,7 @@ An obsolete `CanDie` entry from older development builds is ignored; the porter 
 
 ## Versioned multiplayer builds
 
-The server and every client must install FullingPorter 0.1.2 for this build. Jötunn rejects a missing mod or a different major, minor or patch version when connecting. Keep `Plugin.PluginVersion`, `FullingPorter.csproj` `<Version>` and `manifest.json` `version_number` identical; CI checks this. Increase all three before distributing any changed DLL, including a hotfix, because version checks cannot distinguish different binaries labeled with the same version.
+The server and every client must install FullingPorter 0.1.3 for this build. Jötunn rejects a missing mod or a different major, minor or patch version when connecting. Keep `Plugin.PluginVersion`, `FullingPorter.csproj` `<Version>` and `manifest.json` `version_number` identical; CI checks this. Increase all three before distributing any changed DLL, including a hotfix, because version checks cannot distinguish different binaries labeled with the same version.
 
 ## Thunderstore and r2modman beta package
 
@@ -64,7 +64,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -NoInstall
 powershell -ExecutionPolicy Bypass -File .\scripts\package-thunderstore.ps1
 ```
 
-The second command takes `artifacts\FullingPorter.dll`, checks that its assembly version matches the plugin, project and manifest, verifies the 256×256 icon, and creates `dist\FullingPorter-0.1.2-thunderstore.zip`. The archive contains only `manifest.json`, `icon.png`, `README.md`, `CHANGELOG.md` and `FullingPorter.dll` at its root. Dependencies are declared in the manifest and are not bundled. The script refuses to overwrite an archive with the same version.
+The second command takes `artifacts\FullingPorter.dll`, checks that its assembly version matches the plugin, project and manifest, verifies the 256×256 icon, and creates `dist\FullingPorter-0.1.3-thunderstore.zip`. The archive contains only `manifest.json`, `icon.png`, `README.md`, `CHANGELOG.md` and `FullingPorter.dll` at its root. Dependencies are declared in the manifest and are not bundled. The script refuses to overwrite an archive with the same version.
 
 Before upload, import the ZIP as a local mod in r2modman or Thunderstore Mod Manager and check that it loads in a fresh profile. Select the Valheim community and the correct publishing team in Thunderstore. This is a public beta: the package version is immutable once uploaded, so any correction needs a new version and a rebuild.
 

@@ -14,6 +14,7 @@ A Valheim logistics mod that adds a friendly Fuling porter hired from Haldor. Th
 - Cargo for the same destination is grouped before moving to another destination.
 - Full Smart Storage targets are temporarily cooled down instead of being retried continuously.
 - Item transfers are server-authoritative and remove from source only after destination insertion succeeds.
+- An open source or destination chest pauses delivery; the porter releases its transfer locks while waiting and resumes once the chest closes. If access stays blocked, it ends the current trip and returns home.
 - The porter returns to its persistent home after a trip.
 
 ## Controls
@@ -49,7 +50,7 @@ The one-porter invariant is persisted with a world global key containing the por
 
 The porter's name, home position, activity status and dialogue context are stored in its ZDO. Clients display the server's current activity and remaining stack count. Source markers are stored on the source container ZDO.
 
-The server checks that every joining client has FullingPorter **0.1.2**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
+The server checks that every joining client has FullingPorter **0.1.3**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
 
 ## Configuration defaults
 
@@ -87,4 +88,4 @@ See:
 - [docs/PLAYTEST.md](docs/PLAYTEST.md) for the current test matrix.
 - [docs/BUILD.md](docs/BUILD.md) for local build and Thunderstore/r2modman packaging details.
 
-Host and remote-client tests on two PCs passed on 2026-09-23, including cargo transfers, server config, activity status and the 0.1.1 version-compatibility gate. Dedicated-server and long-term save migration tests remain open. Use a disposable test world until those gates pass.
+Host and remote-client tests on two PCs passed on 2026-09-23 for cargo transfers, server config, activity status and version compatibility. A local host test of 0.1.3 on 2026-09-24 completed four trips and transferred ten stacks, including source and destination chest access while the porter was delivering. The 0.1.3 chest-lock change still needs a repeat with a remote client; dedicated-server and long-term save migration tests remain open. Back up valuable worlds before beta testing.
