@@ -14,5 +14,6 @@
     <Compile Include="../../src/Core/PorterRules.cs" Link="Core/PorterRules.cs" />
     <Compile Include="../../src/Core/PorterWaitTracker.cs" Link="Core/PorterWaitTracker.cs" />
     <Compile Include="../../src/Core/PorterServerRequestRules.cs" Link="Core/PorterServerRequestRules.cs" />
+    <Compile Include="../../src/Core/PorterActiveAreaRules.cs" Link="Core/PorterActiveAreaRules.cs" />
   </ItemGroup>
 </Project>

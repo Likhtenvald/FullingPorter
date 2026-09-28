@@ -67,6 +67,32 @@ internal sealed class PorterState : MonoBehaviour, Hoverable
             _serverActive = null;
     }
 
+    internal static bool TryGetWorldHome(out Vector3 home)
+    {
+        home = Vector3.zero;
+        var zone = ZoneSystem.instance;
+        var zdoMan = ZDOMan.instance;
+        if (zone == null || zdoMan == null)
+            return false;
+
+        foreach (var key in zone.GetGlobalKeys())
+        {
+            if (!TryParseWorldKey(key, out var id))
+                continue;
+
+            var zdo = zdoMan.GetZDO(id);
+            if (zdo == null)
+                continue;
+
+            home = zdo.GetBool(HasHomeKey, false)
+                ? zdo.GetVec3(HomeKey, zdo.GetPosition())
+                : zdo.GetPosition();
+            return true;
+        }
+
+        return false;
+    }
+
     internal static bool WorldHasPorter()
     {
         if (_serverActive != null)

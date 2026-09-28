@@ -62,6 +62,12 @@ internal sealed class PorterWorker : MonoBehaviour
         if (_character != null) _character.m_faction = Character.Faction.Players;
     }
 
+    private void OnDestroy()
+    {
+        ClearBatch();
+        ContainerUseGuard.ReleaseAllServerLocks();
+    }
+
     private void Update()
     {
         if (_view == null || !_view.IsValid() || ZNet.instance == null) return;

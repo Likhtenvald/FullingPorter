@@ -90,6 +90,17 @@ internal static class ContainerUseGuard
             zdo.Set(PorterLockKey, false);
     }
 
+    internal static void ReleaseAllServerLocks()
+    {
+        if (ZNet.instance != null && ZNet.instance.IsServer() && ZDOMan.instance != null)
+        {
+            foreach (var id in HeldLocks)
+                ZDOMan.instance.GetZDO(id)?.Set(PorterLockKey, false);
+        }
+
+        HeldLocks.Clear();
+    }
+
     internal static void ClearStaleLock(Container container)
     {
         if (ZNet.instance == null || !ZNet.instance.IsServer())

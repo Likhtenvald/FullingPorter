@@ -102,9 +102,11 @@ Haldor sells one injected Fuling Porter Contract trade at the configured price, 
 - Package/release metadata review.
 
 
-## Known beta limitation (0.1.4)
+## Persistent porter work area (0.1.5 candidate)
 
-The porter can stop working when the host is far from the base. The wait-state extraction does not fix or verify this behavior. Host-away operation, remote-client transfer regressions, dedicated servers and save migration remain pending runtime validation; 0.1.4 Valheim testing follows publication.
+When the listen-server host leaves the base, the server loads the porter's work-area terrain and network objects even if no other player is nearby. The existing server-only worker continues the transfer cycle. The extension withdraws when the host returns or the porter is dismissed. A destroyed server worker releases its container locks before the area unloads.
+
+This adds CPU and memory work on the host while it is away and may keep other objects in those zones active. The implementation compiles against the local Valheim assemblies, but an empty-base gameplay test and host/client anti-duplication validation remain pending. Dedicated servers and save migration also remain pending runtime validation.
 
 ## RPC security boundary
 

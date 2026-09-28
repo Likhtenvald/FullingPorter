@@ -10,6 +10,19 @@ Valheim testing of 0.1.4 has not been performed and is scheduled after publicati
 
 Known unresolved defect: the porter can stop working when the host is far from the base. Reproduce with a remote client remaining at the base, record host distance, porter status and both logs, and check whether work resumes when the host returns. Compare source and destination item totals. Do not mark the defect fixed based on unit tests or a successful build.
 
+## 0.1.5 candidate: porter works at an empty base
+
+Use a disposable world and identical 0.1.5 DLLs on host and client. Do not infer success from a startup log alone.
+
+1. Place the porter, a marked source chest and a matching Smart Storage destination at the base. Record exact counts of each item across both chests.
+2. Have the host move far enough away that the base is outside the host's loaded area. Confirm the host log reports that the server work area is active. Leave a client at the base and add a new stack to the source. Confirm the porter walks, transfers it once and returns home. Recount both chests.
+3. Add another identifiable stack, then move every player away from the base. Wait longer than one normal porter trip without returning. The host log should continue to show the work area active; no player must be needed to keep it loaded.
+4. Return to the base and confirm that the second stack moved once while the base was empty. Check the client-visible status and recount source plus destination totals. Repeat with the host and client away in different locations.
+5. Repeat with several connected players if available. Their presence must not create multiple transfers.
+6. Open the source, then the destination chest on the client during separate trips. Confirm the existing waits and locks still prevent duplicate or lost items.
+7. Have the host return to the base and verify normal work continues without a duplicate porter or transfer.
+8. Inspect both logs for exceptions and ownership/lock timeouts. Recount exact item totals after every variant. Observe host CPU and memory while the extra work area is active.
+
 ## Build gate
 
 - [ ] Build against the exact Valheim installation used for testing.
