@@ -50,7 +50,7 @@ The one-porter invariant is persisted with a world global key containing the por
 
 The porter's name, home position, activity status and dialogue context are stored in its ZDO. Clients display the server's current activity and remaining stack count. Source markers are stored on the source container ZDO.
 
-The server checks that every joining client has FullingPorter **0.1.3**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
+The server checks that every joining client has FullingPorter **0.1.4**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
 
 ## Configuration defaults
 
