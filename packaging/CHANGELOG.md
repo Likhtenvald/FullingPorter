@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 - development
+
+- Extract porter chest wait timers into a game-independent state tracker and add regression tests for player access, lock retries and subsequent trips.
+
 ## 0.1.3 - beta
 
 - Recover from orphaned porter chest locks and release locks while waiting for container access.
