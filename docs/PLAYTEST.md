@@ -90,7 +90,7 @@ Expected ownership behavior:
 
 ## Multiplayer gate
 
-Run host + one client with identical FullingPorter 0.1.3 builds. Check cargo, synced config and activity on both PCs after a version upgrade.
+Run host + one client with identical FullingPorter 0.1.4 development builds. Check cargo, synced config and activity on both PCs after a version upgrade.
 
 1. Host buys/uses contract.
 2. Client sees the same porter, name, position and movement.
@@ -195,11 +195,11 @@ Expected result: contract price, work radius, and trip capacity follow the serve
 
 ## Multiplayer regression: FullingPorter version gate
 
-1. Install 0.1.3 on both host and remote client; verify connection succeeds and normal porter actions work.
+1. Install 0.1.4 on both host and remote client; verify connection succeeds and normal porter actions work.
 2. Remove FullingPorter from the remote client while leaving Jötunn installed; verify connection is refused with a mod compatibility error.
 3. Restore FullingPorter on the client and remove it from the host; verify connection is refused.
-4. Put 0.1.2 on the client and 0.1.3 on the host; verify connection is refused. Reverse the versions and repeat.
-5. Restore 0.1.3 on both sides; verify connection works again and the contract, config and activity status still synchronize.
+4. Put 0.1.3 on the client and 0.1.4 on the host; verify connection is refused. Reverse the versions and repeat.
+5. Restore 0.1.4 on both sides; verify connection works again and the contract, config and activity status still synchronize.
 6. Repeat the missing-mod and mismatched-version cases on a dedicated server before release.
 
 Expected result: both sides need FullingPorter, with matching major, minor and patch versions. Ensure each newly built DLL has an incremented declared version; the check cannot distinguish two different binaries labeled with the same version.

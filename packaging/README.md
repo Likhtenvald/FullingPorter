@@ -4,7 +4,7 @@ Hire a friendly Fuling from Haldor to move stacks from the chests you mark as so
 
 ## Install
 
-Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.3 for this beta).
+Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.4 for development builds; the published beta is 0.1.3).
 
 For manual installation, install BepInExPack Valheim, Jotunn and QuickStackPlus first, then place `FullingPorter.dll` in `BepInEx/plugins/FullingPorter/` on the host and every client.
 
