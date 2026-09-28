@@ -4,6 +4,8 @@ Build against the same Valheim installation and mod profile that will run the te
 
 ## Recommended development command
 
+Unit tests require the .NET 8 SDK (the .NET 6 SDK cannot build the net8.0 test project). Run `dotnet test .\tests\FullingPorter.Tests\FullingPorter.Tests.csproj -c Release` and confirm a nonzero number of tests passed. The test project includes the xUnit VSTest adapter so this command discovers and executes the tests.
+
 From the repository root:
 
 ```powershell
@@ -53,11 +55,11 @@ An obsolete `CanDie` entry from older development builds is ignored; the porter 
 
 ## Versioned multiplayer builds
 
-The server and every client must install FullingPorter 0.1.4 for this development build. Jötunn rejects a missing mod or a different major, minor or patch version when connecting. Keep `Plugin.PluginVersion`, `FullingPorter.csproj` `<Version>` and `manifest.json` `version_number` identical; CI checks this. Increase all three before distributing any changed DLL, including a hotfix, because version checks cannot distinguish different binaries labeled with the same version.
+The server and every client must install FullingPorter 0.1.4 for this beta. Jötunn rejects a missing mod or a different major, minor or patch version when connecting. Keep `Plugin.PluginVersion`, `FullingPorter.csproj` `<Version>` and `manifest.json` `version_number` identical; CI checks this. Increase all three before distributing any changed DLL, including a hotfix, because version checks cannot distinguish different binaries labeled with the same version.
 
 ## Thunderstore and r2modman beta package
 
-After a successful game build and playtest on the current code, run:
+For the 0.1.4 beta, run the unit tests and local build before packaging. By explicit release decision, Valheim testing follows publication and is not a condition for merging develop into main:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -NoInstall
@@ -66,7 +68,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-thunderstore.ps1
 
 The second command takes `artifacts\FullingPorter.dll`, checks that its assembly version matches the plugin, project and manifest, verifies the 256×256 icon, and creates `dist\FullingPorter-0.1.4-thunderstore.zip`. The archive contains only `manifest.json`, `icon.png`, `README.md`, `CHANGELOG.md` and `FullingPorter.dll` at its root. Dependencies are declared in the manifest and are not bundled. The script refuses to overwrite an archive with the same version.
 
-Before upload, import the ZIP as a local mod in r2modman or Thunderstore Mod Manager and check that it loads in a fresh profile. Select the Valheim community and the correct publishing team in Thunderstore. This is a public beta: the package version is immutable once uploaded, so any correction needs a new version and a rebuild.
+For 0.1.4, the fresh-profile import and Valheim smoke test are pending after publication. Record their results in PLAYTEST.md; successful packaging alone does not verify runtime behavior. Select the Valheim community and the correct publishing team in Thunderstore. This is a public beta: the package version is immutable once uploaded, so any correction needs a new version and a rebuild.
 
 ## After an API-sensitive change
 

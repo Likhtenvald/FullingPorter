@@ -29,6 +29,10 @@ First test the changed build in Valheim. Then ask local Codex:
 
 Codex's finished report and any pushed PR can be reviewed here. The user imports/tests the archive if needed and uploads it manually to Thunderstore. A GitHub commit does not update a Thunderstore package.
 
+## 0.1.4 release decision
+
+For this beta, the user explicitly authorized pushing develop and fast-forwarding main after unit tests, the local Release build and ZIP verification. Valheim testing is deferred until after publication and is not a merge condition. Thunderstore upload remains manual; no GitHub Release or tag is created as part of this preparation.
+
 ## Current testing boundary
 
 A local host test of 0.1.3 covered ordinary delivery and player-held chests. The remote-client anti-duplication regression and the reported stop when the host leaves the base need separate tests. Do not describe them as verified until their results are recorded.

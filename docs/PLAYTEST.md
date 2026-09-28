@@ -4,6 +4,12 @@ Use a disposable world for development tests.
 
 Host and remote-client tests on two PCs were reported passing on 2026-09-23 after the transfer, config and activity-status fixes. A local host tested 0.1.3 on 2026-09-24: four complete trips, ten moved stacks, and delivery resumed after source and destination chests were closed. Repeat the chest-access regression with a remote client; dedicated-server compatibility has not yet been confirmed.
 
+## 0.1.4 beta status and known limitation
+
+Valheim testing of 0.1.4 has not been performed and is scheduled after publication. It is not a condition for this release preparation or the develop-to-main fast-forward. Earlier results below do not certify 0.1.4.
+
+Known unresolved defect: the porter can stop working when the host is far from the base. Reproduce with a remote client remaining at the base, record host distance, porter status and both logs, and check whether work resumes when the host returns. Compare source and destination item totals. Do not mark the defect fixed based on unit tests or a successful build.
+
 ## Build gate
 
 - [ ] Build against the exact Valheim installation used for testing.
@@ -90,7 +96,7 @@ Expected ownership behavior:
 
 ## Multiplayer gate
 
-Run host + one client with identical FullingPorter 0.1.4 development builds. Check cargo, synced config and activity on both PCs after a version upgrade.
+Run host + one client with identical FullingPorter 0.1.4 beta builds. Check cargo, synced config and activity on both PCs after a version upgrade.
 
 1. Host buys/uses contract.
 2. Client sees the same porter, name, position and movement.
@@ -111,7 +117,7 @@ Run host + one client with identical FullingPorter 0.1.4 development builds. Che
 
 ## Multiplayer regression: synchronized porter dialogue (0.1.2)
 
-1. Install 0.1.3 on the host and remote client, stand both players near the porter, and press E on the host. Confirm both see the same line and hear the same voice variant exactly once.
+1. Install 0.1.4 on the host and remote client, stand both players near the porter, and press E on the host. Confirm both see the same line and hear the same voice variant exactly once.
 2. Press E on the remote client and confirm both see the same line and hear the same voice variant exactly once. Repeat while the porter is working or returning.
 3. Leave both players near the porter until it speaks on its own. Confirm each ambient line and voice matches on both PCs with no duplicate bubbles or overlapping spam.
 4. Move the host more than 20 m away while the client stays nearby. Confirm the client's manual dialogue still works and the host does not see a distant speech bubble.
@@ -200,6 +206,6 @@ Expected result: contract price, work radius, and trip capacity follow the serve
 3. Restore FullingPorter on the client and remove it from the host; verify connection is refused.
 4. Put 0.1.3 on the client and 0.1.4 on the host; verify connection is refused. Reverse the versions and repeat.
 5. Restore 0.1.4 on both sides; verify connection works again and the contract, config and activity status still synchronize.
-6. Repeat the missing-mod and mismatched-version cases on a dedicated server before release.
+6. Repeat the missing-mod and mismatched-version cases on a dedicated server during post-publication beta testing.
 
 Expected result: both sides need FullingPorter, with matching major, minor and patch versions. Ensure each newly built DLL has an incremented declared version; the check cannot distinguish two different binaries labeled with the same version.

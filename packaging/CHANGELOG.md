@@ -1,8 +1,11 @@
 # Changelog
 
-## 0.1.4 - development
+## 0.1.4 - beta
 
+- Add the missing xUnit VSTest adapter so `dotnet test` discovers and runs the regression suite.
 - Extract porter chest wait timers into a game-independent state tracker and add regression tests for player access, lock retries and subsequent trips.
+- Known beta limitation: the porter can stop working when the host is far from the base; this release does not fix that defect.
+- Valheim testing of 0.1.4 is pending after publication; earlier playtest results apply only to the builds recorded below and in the playtest documentation.
 
 ## 0.1.3 - beta
 

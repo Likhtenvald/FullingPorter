@@ -102,6 +102,10 @@ Haldor sells one injected Fuling Porter Contract trade at the configured price, 
 - Package/release metadata review.
 
 
+## Known beta limitation (0.1.4)
+
+The porter can stop working when the host is far from the base. The wait-state extraction does not fix or verify this behavior. Host-away operation, remote-client transfer regressions, dedicated servers and save migration remain pending runtime validation; 0.1.4 Valheim testing follows publication.
+
 ## RPC security boundary
 
 Remote porter actions are server-authoritative.

@@ -1,4 +1,4 @@
-# FullingPorter
+# FullingPorter 0.1.4 (beta)
 
 A Valheim logistics mod that adds a friendly Fuling porter hired from Haldor. The porter moves items from player-selected source containers into QuickStackPlus Smart Storage without introducing a second destination-filter system.
 
@@ -72,6 +72,10 @@ Older development configs may still contain obsolete entries such as `CanDie`; t
 - Jötunn 2.30.2+
 - QuickStackPlus 1.2.0+
 - ConditionalConfigSync 1.0.5+ through QuickStackPlus
+
+## Known beta limitations
+
+The porter can stop working when the host is far from the base. This defect remains unresolved in 0.1.4. Valheim testing of this version is pending after publication, including remote-client chest access and dialogue, host-away behavior, dedicated servers and save migration.
 
 ## Development
 
