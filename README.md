@@ -87,5 +87,6 @@ See:
 - [docs/DESIGN.md](docs/DESIGN.md) for architecture.
 - [docs/PLAYTEST.md](docs/PLAYTEST.md) for the current test matrix.
 - [docs/BUILD.md](docs/BUILD.md) for local build and Thunderstore/r2modman packaging details.
+- [docs/CODEX_WORKFLOW.md](docs/CODEX_WORKFLOW.md) for the local Codex development and release handoff.
 
 Host and remote-client tests on two PCs passed on 2026-09-23 for cargo transfers, server config, activity status and version compatibility. A local host test of 0.1.3 on 2026-09-24 completed four trips and transferred ten stacks, including source and destination chest access while the porter was delivering. The 0.1.3 chest-lock change still needs a repeat with a remote client; dedicated-server and long-term save migration tests remain open. Back up valuable worlds before beta testing.
