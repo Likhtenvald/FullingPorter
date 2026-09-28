@@ -30,10 +30,7 @@ internal sealed class PorterWorker : MonoBehaviour
     private float _nextTransferTime;
     private bool _homeInitialized;
     private int _activeTripCapacity;
-    private ItemDrop.ItemData _ownershipWaitItem;
-    private float _ownershipWaitSince;
-    private float _containerBusySince = -1f;
-    private float _playerBusySince = -1f;
+    private readonly PorterWaitTracker _wait = new();
     private Container _activeDestination;
     private bool _returningFromWork;
     private float _blockedStatusUntil;
@@ -204,7 +201,7 @@ internal sealed class PorterWorker : MonoBehaviour
             return;
         }
 
-        ResetPlayerBusyWait();
+        _wait.PlayerAvailable();
 
         if (!MoveTowards(entry.Destination.transform.position, InteractionDistance, out var stuckAtDestination))
         {
@@ -237,7 +234,9 @@ internal sealed class PorterWorker : MonoBehaviour
 
         if (transferResult == TransferService.TransferResult.WaitingForOwnership)
         {
-            if (_containerBusySince >= 0f && Time.time - _containerBusySince >= ContainerBusyTimeout)
+            var wait = _wait.OwnershipPending(
+                entry.Item, Time.time, OwnershipWaitTimeout, ContainerBusyTimeout);
+            if (wait == PorterWaitDecision.LockTimedOut)
             {
                 Plugin.Log.LogWarning(
                     $"Porter container access did not stabilize for {DescribeItem(entry.Item)}; " +
@@ -247,26 +246,18 @@ internal sealed class PorterWorker : MonoBehaviour
                 return;
             }
 
-            if (_ownershipWaitItem != entry.Item)
-            {
-                _ownershipWaitItem = entry.Item;
-                _ownershipWaitSince = Time.time;
+            if (wait == PorterWaitDecision.Started)
                 Plugin.Log.LogDebug($"Porter waiting for container ownership for {DescribeItem(entry.Item)}.");
-                return;
-            }
 
-            if (Time.time - _ownershipWaitSince < OwnershipWaitTimeout)
+            if (wait != PorterWaitDecision.TimedOut)
                 return;
 
             Plugin.Log.LogWarning($"Porter ownership wait timed out for {DescribeItem(entry.Item)}; skipping this stack.");
-            ResetOwnershipWait();
             RemoveCargoEntryAndContinue(index);
             return;
         }
 
-        ResetOwnershipWait();
-        ResetContainerBusyWait();
-        ResetPlayerBusyWait();
+        _wait.Reset();
 
         if (transferResult == TransferService.TransferResult.Success)
         {
@@ -616,9 +607,7 @@ internal sealed class PorterWorker : MonoBehaviour
         // cargo on the next tick. If another item can still fit in the same
         // container, that container may be selected again.
         _activeDestination = null;
-        ResetOwnershipWait();
-        ResetContainerBusyWait();
-        ResetPlayerBusyWait();
+        _wait.Reset();
 
         if (_cargo.Count == 0)
             FinishBatch();
@@ -797,9 +786,9 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void WaitForPlayerContainer(CargoEntry entry)
     {
-        if (_playerBusySince < 0f)
+        var wait = _wait.PlayerBusy(Time.time, PlayerBusyTimeout);
+        if (wait == PorterWaitDecision.Started)
         {
-            _playerBusySince = Time.time;
             Plugin.Log.LogDebug(
                 $"Porter waiting for player to close a container for {DescribeItem(entry.Item)}; " +
                 $"source [{ContainerUseGuard.DescribeState(_source)}], " +
@@ -808,10 +797,8 @@ internal sealed class PorterWorker : MonoBehaviour
 
         ContainerUseGuard.Release(entry.Destination);
         ContainerUseGuard.Release(_source);
-        ResetOwnershipWait();
-        ResetContainerBusyWait();
 
-        if (Time.time - _playerBusySince >= PlayerBusyTimeout)
+        if (wait == PorterWaitDecision.TimedOut)
         {
             Plugin.Log.LogWarning(
                 $"Porter player container wait timed out for {DescribeItem(entry.Item)}; returning home.");
@@ -824,9 +811,9 @@ internal sealed class PorterWorker : MonoBehaviour
 
     private void WaitForBusyContainer(CargoEntry entry)
     {
-        if (_containerBusySince < 0f)
+        var wait = _wait.LockBusy(Time.time, ContainerBusyTimeout);
+        if (wait == PorterWaitDecision.Started)
         {
-            _containerBusySince = Time.time;
             Plugin.Log.LogWarning(
                 $"Porter waiting for container access for {DescribeItem(entry.Item)}; " +
                 $"source [{ContainerUseGuard.DescribeState(_source)}], " +
@@ -837,9 +824,8 @@ internal sealed class PorterWorker : MonoBehaviour
         // both containers and reacquire the locks on the next transfer attempt.
         ContainerUseGuard.Release(entry.Destination);
         ContainerUseGuard.Release(_source);
-        ResetOwnershipWait();
 
-        if (Time.time - _containerBusySince >= ContainerBusyTimeout)
+        if (wait == PorterWaitDecision.TimedOut)
         {
             Plugin.Log.LogWarning(
                 $"Porter container wait timed out for {DescribeItem(entry.Item)}; " +
@@ -850,16 +836,6 @@ internal sealed class PorterWorker : MonoBehaviour
         }
 
         _nextTransferTime = Time.time + TransferFailureRetryDelay;
-    }
-
-    private void ResetContainerBusyWait() => _containerBusySince = -1f;
-
-    private void ResetPlayerBusyWait() => _playerBusySince = -1f;
-
-    private void ResetOwnershipWait()
-    {
-        _ownershipWaitItem = null;
-        _ownershipWaitSince = 0f;
     }
 
     private void ClearBatch()
@@ -876,8 +852,6 @@ internal sealed class PorterWorker : MonoBehaviour
         _nextTransferTime = 0f;
         _activeTripCapacity = 0;
         _activeDestination = null;
-        ResetOwnershipWait();
-        ResetContainerBusyWait();
-        ResetPlayerBusyWait();
+        _wait.Reset();
     }
 }
