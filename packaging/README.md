@@ -1,10 +1,10 @@
-# FullingPorter (beta)
+# FullingPorter 0.1.5 (playtest candidate)
 
 Hire a friendly Fuling from Haldor to move stacks from the chests you mark as sources into [QuickStackPlus](https://thunderstore.io/c/valheim/p/Goneryx/QuickStackPlus/) Smart Storage. Set each destination chest's accepted items in QuickStackPlus. The porter uses those filters; it does not create another storage rule system.
 
 ## Install
 
-Install FullingPorter with r2modman or Thunderstore Mod Manager. Its declared dependencies are installed automatically. Every player joining a world and the host must use the same FullingPorter version (0.1.4 for this beta).
+Import this test archive locally in r2modman or Thunderstore Mod Manager. Install its declared dependencies, and use the same 0.1.5 build on the host and every client.
 
 For manual installation, install BepInExPack Valheim, Jotunn and QuickStackPlus first, then place `FullingPorter.dll` in `BepInEx/plugins/FullingPorter/` on the host and every client.
 
@@ -21,11 +21,11 @@ The host controls contract price, work radius and trip capacity. Key bindings st
 
 ## Known beta limitations
 
-The porter can stop working when the host is far from the base. This is a known unresolved defect in 0.1.4; do not rely on unattended work while the host is away.
+This candidate keeps the porter work area active on the server while the host is away, even when no player is at the base. This adds server CPU and memory work; the empty-base behavior and chest transfer integrity still require an in-game host/client test.
 
 ## Beta testing
 
-Valheim testing of 0.1.4 will take place after publication and has not yet been performed.
+Valheim testing of this 0.1.5 candidate has not yet been performed. Use a disposable world and verify exact source plus destination item counts before and after transfers.
 
 Earlier host/client tests covered transfers, shared settings, activity status and version mismatch handling. In a local host test of 0.1.3, the porter finished four trips and transferred ten stacks while source and destination chests were opened during delivery. Repeat the chest-access and synchronized-dialogue checks with a remote client. Dedicated servers and migration from older saved worlds have not yet been verified. Back up valuable worlds before beta testing.
 

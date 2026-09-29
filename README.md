@@ -1,4 +1,4 @@
-# FullingPorter 0.1.4 (beta)
+# FullingPorter 0.1.5 (playtest candidate)
 
 A Valheim logistics mod that adds a friendly Fuling porter hired from Haldor. The porter moves items from player-selected source containers into QuickStackPlus Smart Storage without introducing a second destination-filter system.
 
@@ -50,7 +50,7 @@ The one-porter invariant is persisted with a world global key containing the por
 
 The porter's name, home position, activity status and dialogue context are stored in its ZDO. Clients display the server's current activity and remaining stack count. Source markers are stored on the source container ZDO.
 
-The server checks that every joining client has FullingPorter **0.1.4**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
+The server checks that every joining client has FullingPorter **0.1.5**, and Jötunn rejects missing or different major, minor or patch versions. The same requirement applies when a client with FullingPorter joins a server without it. Version equality compares declared mod versions, so bump the version on every changed build sent to another player.
 
 ## Configuration defaults
 
@@ -75,7 +75,7 @@ Older development configs may still contain obsolete entries such as `CanDie`; t
 
 ## Known beta limitations
 
-The porter can stop working when the host is far from the base. This defect remains unresolved in 0.1.4. Valheim testing of this version is pending after publication, including remote-client chest access and dialogue, host-away behavior, dedicated servers and save migration.
+This candidate keeps the porter work area active on the server while the host is away, including when no player remains at the base. This adds server CPU and memory work. Host/client testing of empty-base transfers and exact item totals is pending, as are dedicated-server and save-migration checks.
 
 ## Development
 

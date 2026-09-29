@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5 - playtest candidate
+
+- Keep the porter work area active on the server while the host is away, including when no player remains at the base.
+- Release server-held chest transfer locks if the porter worker unloads during a trip.
+- Add area-activation tests and an empty-base multiplayer playtest checklist.
+- In-game host/client transfer integrity and server performance are pending validation.
+
 ## 0.1.4 - beta
 
 - Add the missing xUnit VSTest adapter so `dotnet test` discovers and runs the regression suite.
